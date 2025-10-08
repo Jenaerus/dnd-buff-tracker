@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>D&D 3.5e Buff Tracker - Multi-User</title>
+    <title>D&D 3.5e Buff & Initiative Tracker</title>
     <style>
         * {
             margin: 0;
@@ -60,6 +60,117 @@
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
         
+        .initiative-section {
+            padding: 20px;
+            background: #FAF0E6;
+            border-bottom: 3px solid #8B7355;
+        }
+        
+        .initiative-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .initiative-header h2 {
+            color: #5D4037;
+            font-size: 1.5em;
+        }
+        
+        .initiative-controls {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .initiative-list {
+            display: grid;
+            gap: 10px;
+        }
+        
+        .initiative-item {
+            display: grid;
+            grid-template-columns: 60px 2fr 1fr 1fr 100px;
+            gap: 10px;
+            padding: 12px;
+            background: #FFF8DC;
+            border-radius: 8px;
+            align-items: center;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .initiative-item.active {
+            background: #FFE4B5;
+            border-color: #8B4513;
+            box-shadow: 0 4px 8px rgba(139, 69, 19, 0.3);
+            transform: scale(1.02);
+        }
+        
+        .initiative-item.dead {
+            opacity: 0.5;
+            background: #D3D3D3;
+        }
+        
+        .initiative-number {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #8B4513;
+            text-align: center;
+        }
+        
+        .combatant-name {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #5D4037;
+        }
+        
+        .hp-display {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .hp-bar {
+            flex: 1;
+            height: 20px;
+            background: #DEB887;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .hp-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #228B22 0%, #90EE90 100%);
+            transition: width 0.3s;
+        }
+        
+        .hp-fill.low {
+            background: linear-gradient(90deg, #B22222 0%, #FF6B6B 100%);
+        }
+        
+        .hp-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.8em;
+            font-weight: 600;
+            color: #5D4037;
+        }
+        
+        .hp-input-group {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .hp-input {
+            width: 50px;
+            padding: 5px;
+            text-align: center;
+        }
+        
         .controls {
             padding: 20px;
             background: #F5DEB3;
@@ -114,6 +225,11 @@
         
         .btn-danger:hover {
             background: #8B0000;
+        }
+        
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 12px;
         }
         
         .time-controls {
@@ -322,14 +438,42 @@
             padding: 5px 15px;
             font-size: 12px;
         }
+        
+        .round-counter {
+            background: #FFF8DC;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #8B4513;
+            display: inline-block;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🐉 D&D 3.5e Buff Tracker</h1>
-            <p>Manage your party's magical enhancements</p>
+            <h1>🐉 D&D 3.5e Combat Tracker</h1>
+            <p>Initiative, Buffs, and Battle Management</p>
             <div class="sync-status" id="syncStatus">⚪ Connecting...</div>
+        </div>
+        
+        <!-- Initiative Tracker Section -->
+        <div class="initiative-section">
+            <div class="initiative-header">
+                <div>
+                    <h2>⚔️ Initiative Tracker</h2>
+                    <div class="round-counter" id="roundCounter">Round 1</div>
+                </div>
+                <div class="initiative-controls">
+                    <button class="btn-secondary" onclick="showAddCombatantModal()">➕ Add Combatant</button>
+                    <button class="btn-primary" onclick="nextTurn()">▶️ Next Turn</button>
+                    <button class="btn-danger btn-small" onclick="resetInitiative()">Reset Combat</button>
+                </div>
+            </div>
+            <div class="initiative-list" id="initiativeList">
+                <!-- Initiative items will be generated here -->
+            </div>
         </div>
         
         <div class="controls">
@@ -351,12 +495,27 @@
                 <button class="btn-secondary" onclick="showCustomSpellModal()">✨ Add Custom Spell</button>
                 <button class="btn-secondary" onclick="showManageSpellsModal()">📋 Manage Spell Lists</button>
                 <button class="btn-secondary" onclick="showManageCharactersModal()">👥 Manage Characters</button>
-                <button class="btn-danger" onclick="clearAll()">🗑️ Clear All</button>
+                <button class="btn-danger" onclick="clearAll()">🗑️ Clear All Buffs</button>
             </div>
         </div>
         
         <div class="buff-table" id="buffTable">
             <!-- Spell level sections will be generated here -->
+        </div>
+    </div>
+    
+    <!-- Add Combatant Modal -->
+    <div id="addCombatantModal" class="modal">
+        <div class="modal-content">
+            <h2>Add Combatant</h2>
+            <input type="text" id="combatantName" placeholder="Name">
+            <input type="number" id="combatantInitiative" placeholder="Initiative" min="1" max="50">
+            <input type="number" id="combatantMaxHP" placeholder="Max HP" min="1">
+            <input type="number" id="combatantCurrentHP" placeholder="Current HP" min="0">
+            <div class="modal-buttons">
+                <button class="btn-secondary" onclick="addCombatant()">Add</button>
+                <button class="btn-danger" onclick="closeAddCombatantModal()">Cancel</button>
+            </div>
         </div>
     </div>
     
@@ -431,16 +590,16 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     
     <script>
-        // 🔥 FIREBASE CONFIGURATION - REPLACE THIS WITH YOUR CONFIG FROM FIREBASE CONSOLE
-      const firebaseConfig = {
-  apiKey: "AIzaSyDuOL3xQZ1kVZSnFTGQcraR4IkJ6lcDCQQ",
-  authDomain: "jenearus-buff-tracker.firebaseapp.com",
-  databaseURL: "https://jenearus-buff-tracker-default-rtdb.firebaseio.com",
-  projectId: "jenearus-buff-tracker",
-  storageBucket: "jenearus-buff-tracker.firebasestorage.app",
-  messagingSenderId: "110990836637",
-  appId: "1:110990836637:web:ac808b150052909f8a6574"
-};
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDuOL3xQZ1kVZSnFTGQcraR4IkJ6lcDCQQ",
+            authDomain: "jenearus-buff-tracker.firebaseapp.com",
+            databaseURL: "https://jenearus-buff-tracker-default-rtdb.firebaseio.com",
+            projectId: "jenearus-buff-tracker",
+            storageBucket: "jenearus-buff-tracker.firebasestorage.app",
+            messagingSenderId: "110990836637",
+            appId: "1:110990836637:web:ac808b150052909f8a6574"
+        };
 
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
@@ -448,6 +607,7 @@
         const buffRef = database.ref('buffs');
         const customSpellsRef = database.ref('customSpells');
         const charactersRef = database.ref('characters');
+        const initiativeRef = database.ref('initiative');
         
         // Connection status
         const connectedRef = database.ref('.info/connected');
@@ -584,6 +744,9 @@
         let activeBuffs = [];
         let customSpells = {};
         let isLoadingFromFirebase = false;
+        let combatants = [];
+        let currentTurnIndex = 0;
+        let currentRound = 1;
         
         // Load characters from Firebase
         charactersRef.on('value', (snapshot) => {
@@ -593,6 +756,140 @@
                 rebuildTable();
             }
         });
+        
+        // Load initiative from Firebase
+        initiativeRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                combatants = data.combatants || [];
+                currentTurnIndex = data.currentTurnIndex || 0;
+                currentRound = data.currentRound || 1;
+                renderInitiativeList();
+            }
+        });
+        
+        // Initiative Functions
+        function showAddCombatantModal() {
+            document.getElementById('addCombatantModal').style.display = 'block';
+        }
+        
+        function closeAddCombatantModal() {
+            document.getElementById('addCombatantModal').style.display = 'none';
+            document.getElementById('combatantName').value = '';
+            document.getElementById('combatantInitiative').value = '';
+            document.getElementById('combatantMaxHP').value = '';
+            document.getElementById('combatantCurrentHP').value = '';
+        }
+        
+        function addCombatant() {
+            const name = document.getElementById('combatantName').value.trim();
+            const initiative = parseInt(document.getElementById('combatantInitiative').value);
+            const maxHP = parseInt(document.getElementById('combatantMaxHP').value);
+            const currentHP = parseInt(document.getElementById('combatantCurrentHP').value);
+            
+            if (!name || isNaN(initiative) || isNaN(maxHP) || isNaN(currentHP)) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            combatants.push({
+                id: `combatant-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                name,
+                initiative,
+                maxHP,
+                currentHP
+            });
+            
+            combatants.sort((a, b) => b.initiative - a.initiative);
+            saveInitiativeToFirebase();
+            closeAddCombatantModal();
+        }
+        
+        function renderInitiativeList() {
+            const list = document.getElementById('initiativeList');
+            list.innerHTML = '';
+            
+            document.getElementById('roundCounter').textContent = `Round ${currentRound}`;
+            
+            if (combatants.length === 0) {
+                list.innerHTML = '<p style="text-align: center; color: #8B7355; padding: 20px;">No combatants yet. Click "Add Combatant" to begin!</p>';
+                return;
+            }
+            
+            combatants.forEach((combatant, index) => {
+                const item = document.createElement('div');
+                item.className = `initiative-item ${index === currentTurnIndex ? 'active' : ''} ${combatant.currentHP <= 0 ? 'dead' : ''}`;
+                
+                const hpPercent = (combatant.currentHP / combatant.maxHP) * 100;
+                const hpClass = hpPercent <= 30 ? 'low' : '';
+                
+                item.innerHTML = `
+                    <div class="initiative-number">${combatant.initiative}</div>
+                    <div class="combatant-name">${combatant.name}${combatant.currentHP <= 0 ? ' 💀' : ''}</div>
+                    <div class="hp-display">
+                        <div class="hp-bar">
+                            <div class="hp-fill ${hpClass}" style="width: ${hpPercent}%"></div>
+                            <div class="hp-text">${combatant.currentHP}/${combatant.maxHP}</div>
+                        </div>
+                    </div>
+                    <div class="hp-input-group">
+                        <input type="number" class="hp-input" value="${combatant.currentHP}" 
+                               onchange="updateHP('${combatant.id}', this.value)" 
+                               min="0" max="${combatant.maxHP}">
+                    </div>
+                    <button class="btn-danger btn-small" onclick="removeCombatant('${combatant.id}')">Remove</button>
+                `;
+                list.appendChild(item);
+            });
+        }
+        
+        function updateHP(id, newHP) {
+            const combatant = combatants.find(c => c.id === id);
+            if (combatant) {
+                combatant.currentHP = Math.max(0, Math.min(parseInt(newHP), combatant.maxHP));
+                saveInitiativeToFirebase();
+            }
+        }
+        
+        function removeCombatant(id) {
+            if (confirm('Remove this combatant?')) {
+                combatants = combatants.filter(c => c.id !== id);
+                if (currentTurnIndex >= combatants.length) {
+                    currentTurnIndex = 0;
+                }
+                saveInitiativeToFirebase();
+            }
+        }
+        
+        function nextTurn() {
+            if (combatants.length === 0) return;
+            
+            currentTurnIndex++;
+            if (currentTurnIndex >= combatants.length) {
+                currentTurnIndex = 0;
+                currentRound++;
+                advanceTime(); // Automatically advance 1 round when new round starts
+            }
+            
+            saveInitiativeToFirebase();
+        }
+        
+        function resetInitiative() {
+            if (confirm('Reset initiative and clear all combatants?')) {
+                combatants = [];
+                currentTurnIndex = 0;
+                currentRound = 1;
+                saveInitiativeToFirebase();
+            }
+        }
+        
+        function saveInitiativeToFirebase() {
+            initiativeRef.set({
+                combatants,
+                currentTurnIndex,
+                currentRound
+            });
+        }
         
         // Initialize the table
         function initializeTable() {
