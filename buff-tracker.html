@@ -50,6 +50,7 @@
             font-size: 1em;
             font-weight: bold;
             color: #FFF8DC;
+            white-space: nowrap;
         }
         
         .time-tracker-header input,
@@ -196,7 +197,7 @@
             margin-bottom: 15px;
             display: flex;
             gap: 15px;
-            justify-content: center;
+            justify-content: flex-start;
             align-items: center;
             flex-wrap: wrap;
         }
@@ -507,6 +508,11 @@
             </div>
         </div>
         
+        <!-- Spell Level Tabs -->
+        <div class="spell-tabs" id="spellTabs">
+            <!-- Tabs will be generated here -->
+        </div>
+        
         <div class="controls">
             <div class="control-section">
                 <button class="btn-primary" onclick="addSpellRow()">➕ Add Spell Row</button>
@@ -515,11 +521,6 @@
                 <button class="btn-secondary" onclick="showManageCharactersModal()">👥 Manage Characters</button>
                 <button class="btn-danger" onclick="clearAll()">🗑️ Clear All Buffs</button>
             </div>
-        </div>
-        
-        <!-- Spell Level Tabs -->
-        <div class="spell-tabs" id="spellTabs">
-            <!-- Tabs will be generated here -->
         </div>
         
         <div class="buff-table" id="buffTable">
