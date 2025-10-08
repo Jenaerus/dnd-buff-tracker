@@ -247,17 +247,53 @@
             font-weight: 600;
         }
         
+        .spell-tabs {
+            display: flex;
+            gap: 5px;
+            padding: 10px 20px;
+            background: #F5DEB3;
+            border-bottom: 2px solid #8B7355;
+            flex-wrap: wrap;
+        }
+        
+        .spell-tab {
+            padding: 10px 15px;
+            background: #DEB887;
+            border: 2px solid #8B7355;
+            border-radius: 5px 5px 0 0;
+            cursor: pointer;
+            font-weight: 600;
+            color: #5D4037;
+            transition: all 0.3s;
+            border-bottom: none;
+        }
+        
+        .spell-tab:hover {
+            background: #D2B48C;
+            transform: translateY(-2px);
+        }
+        
+        .spell-tab.active {
+            background: #8B4513;
+            color: #FFF8DC;
+            border-color: #8B4513;
+        }
+        
         .buff-table {
             padding: 20px;
             overflow-x: auto;
         }
         
         .spell-level-section {
-            margin-bottom: 30px;
+            display: none;
             background: #FAF0E6;
-            border-radius: 10px;
+            border-radius: 0 0 10px 10px;
             overflow: hidden;
             box-shadow: 0 2px 10px rgba(101, 67, 33, 0.2);
+        }
+        
+        .spell-level-section.active {
+            display: block;
         }
         
         .spell-level-header {
@@ -499,6 +535,11 @@
             </div>
         </div>
         
+        <!-- Spell Level Tabs -->
+        <div class="spell-tabs" id="spellTabs">
+            <!-- Tabs will be generated here -->
+        </div>
+        
         <div class="buff-table" id="buffTable">
             <!-- Spell level sections will be generated here -->
         </div>
@@ -586,10 +627,20 @@
     </div>
 
     <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.22.0/firebase-app-compat.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.22.0/firebase-database-compat.min.js"></script>
     
     <script>
+        // Global variables - declare these first
+        let characters = ["Kellam", "Aneurin", "Cledwyn", "Artin", "Grim", "Ally"];
+        let activeBuffs = [];
+        let customSpells = {};
+        let isLoadingFromFirebase = false;
+        let combatants = [];
+        let currentTurnIndex = 0;
+        let currentRound = 1;
+        let currentSpellLevel = 3;
+        
         // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyDuOL3xQZ1kVZSnFTGQcraR4IkJ6lcDCQQ",
@@ -740,14 +791,6 @@
             ]
         };
         
-        let characters = ["Kellam", "Aneurin", "Cledwyn", "Artin", "Grim", "Ally"];
-        let activeBuffs = [];
-        let customSpells = {};
-        let isLoadingFromFirebase = false;
-        let combatants = [];
-        let currentTurnIndex = 0;
-        let currentRound = 1;
-        
         // Load characters from Firebase
         charactersRef.on('value', (snapshot) => {
             const data = snapshot.val();
@@ -868,7 +911,7 @@
             if (currentTurnIndex >= combatants.length) {
                 currentTurnIndex = 0;
                 currentRound++;
-                advanceTime(); // Automatically advance 1 round when new round starts
+                advanceTime();
             }
             
             saveInitiativeToFirebase();
@@ -893,12 +936,27 @@
         
         // Initialize the table
         function initializeTable() {
+            // Create tabs
+            const tabsContainer = document.getElementById('spellTabs');
+            tabsContainer.innerHTML = '';
+            
+            for (let level = 9; level >= 0; level--) {
+                const tab = document.createElement('div');
+                tab.className = `spell-tab ${level === currentSpellLevel ? 'active' : ''}`;
+                tab.dataset.level = level;
+                tab.textContent = level === 0 ? 'Cantrips' : `Level ${level}`;
+                tab.onclick = () => switchSpellLevel(level);
+                tabsContainer.appendChild(tab);
+            }
+            
+            // Create spell level sections
             const buffTable = document.getElementById('buffTable');
             buffTable.innerHTML = '';
             
             for (let level = 9; level >= 0; level--) {
                 const section = document.createElement('div');
-                section.className = 'spell-level-section';
+                section.className = `spell-level-section ${level === currentSpellLevel ? 'active' : ''}`;
+                section.id = `spell-section-${level}`;
                 section.innerHTML = `
                     <div class="spell-level-header">
                         ${level === 0 ? 'Cantrips' : `Level ${level} Spells`}
@@ -921,6 +979,25 @@
             }
         }
         
+        // Switch between spell levels
+        function switchSpellLevel(level) {
+            currentSpellLevel = level;
+            
+            // Update tab active states
+            document.querySelectorAll('.spell-tab').forEach(tab => {
+                tab.classList.remove('active');
+                if (tab.dataset.level == level) {
+                    tab.classList.add('active');
+                }
+            });
+            
+            // Update section active states
+            document.querySelectorAll('.spell-level-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(`spell-section-${level}`).classList.add('active');
+        }
+        
         // Rebuild the entire table (when characters change)
         function rebuildTable() {
             if (isLoadingFromFirebase) return;
@@ -936,13 +1013,7 @@
         // Add a new spell row
         function addSpellRow(level = null, buffData = null) {
             if (level === null) {
-                const selectedLevel = prompt("Enter spell level (0-9):", "1");
-                if (selectedLevel === null) return;
-                level = parseInt(selectedLevel);
-                if (isNaN(level) || level < 0 || level > 9) {
-                    alert("Please enter a valid spell level (0-9)");
-                    return;
-                }
+                level = currentSpellLevel;
             }
             
             const tbody = document.getElementById(`spellLevel${level}`);
