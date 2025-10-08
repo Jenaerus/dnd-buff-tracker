@@ -30,8 +30,8 @@
         .header {
             background: linear-gradient(135deg, #8B4513 0%, #A0522D 50%, #964B00 100%);
             color: #FFF8DC;
-            padding: 30px;
-            text-align: center;
+            padding: 10px 30px;
+            text-align: right;
             border-bottom: 3px solid #654321;
         }
         
@@ -52,12 +52,6 @@
         .sync-status.disconnected {
             background: rgba(178, 34, 34, 0.3);
             color: #FFB6C1;
-        }
-        
-        h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
         
         .initiative-section {
@@ -84,91 +78,76 @@
         }
         
         .initiative-list {
-            display: grid;
-            gap: 10px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
         }
         
         .initiative-item {
-            display: grid;
-            grid-template-columns: 60px 2fr 1fr 1fr 100px;
-            gap: 10px;
-            padding: 12px;
-            background: #FFF8DC;
-            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
             align-items: center;
-            border: 2px solid transparent;
+            padding: 15px;
+            background: #FFF8DC;
+            border-radius: 10px;
+            border: 3px solid #8B7355;
             transition: all 0.3s;
+            min-width: 120px;
         }
         
         .initiative-item.active {
             background: #FFE4B5;
             border-color: #8B4513;
-            box-shadow: 0 4px 8px rgba(139, 69, 19, 0.3);
-            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(139, 69, 19, 0.4);
+            transform: scale(1.05);
         }
         
-        .initiative-item.dead {
-            opacity: 0.5;
-            background: #D3D3D3;
+        .combatant-name {
+            font-size: 1.1em;
+            font-weight: 700;
+            color: #5D4037;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .initiative-controls-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
         }
         
         .initiative-number {
             font-size: 1.8em;
             font-weight: bold;
             color: #8B4513;
+            width: 60px;
             text-align: center;
-        }
-        
-        .combatant-name {
-            font-size: 1.1em;
-            font-weight: 600;
-            color: #5D4037;
-        }
-        
-        .hp-display {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        
-        .hp-bar {
-            flex: 1;
-            height: 20px;
-            background: #DEB887;
-            border-radius: 10px;
-            overflow: hidden;
-            position: relative;
-        }
-        
-        .hp-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #228B22 0%, #90EE90 100%);
-            transition: width 0.3s;
-        }
-        
-        .hp-fill.low {
-            background: linear-gradient(90deg, #B22222 0%, #FF6B6B 100%);
-        }
-        
-        .hp-text {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 0.8em;
-            font-weight: 600;
-            color: #5D4037;
-        }
-        
-        .hp-input-group {
-            display: flex;
-            gap: 5px;
-        }
-        
-        .hp-input {
-            width: 50px;
+            border: 2px solid #8B7355;
+            border-radius: 5px;
             padding: 5px;
-            text-align: center;
+            background: #FFFAF0;
+        }
+        
+        .initiative-number:focus {
+            outline: none;
+            border-color: #8B4513;
+            box-shadow: 0 0 0 3px rgba(139, 69, 19, 0.1);
+        }
+        
+        .remove-combatant-btn {
+            margin-top: 10px;
+            padding: 4px 12px;
+            font-size: 11px;
+            background: #B22222;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .remove-combatant-btn:hover {
+            background: #8B0000;
         }
         
         .controls {
@@ -489,8 +468,6 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🐉 D&D 3.5e Combat Tracker</h1>
-            <p>Initiative, Buffs, and Battle Management</p>
             <div class="sync-status" id="syncStatus">⚪ Connecting...</div>
         </div>
         
@@ -502,7 +479,7 @@
                     <div class="round-counter" id="roundCounter">Round 1</div>
                 </div>
                 <div class="initiative-controls">
-                    <button class="btn-secondary" onclick="showAddCombatantModal()">➕ Add Combatant</button>
+                    <button class="btn-secondary" onclick="showAddCombatantModal()">➕ Add Enemy</button>
                     <button class="btn-primary" onclick="nextTurn()">▶️ Next Turn</button>
                     <button class="btn-danger btn-small" onclick="resetInitiative()">Reset Combat</button>
                 </div>
@@ -548,11 +525,9 @@
     <!-- Add Combatant Modal -->
     <div id="addCombatantModal" class="modal">
         <div class="modal-content">
-            <h2>Add Combatant</h2>
-            <input type="text" id="combatantName" placeholder="Name">
+            <h2>Add Enemy</h2>
+            <input type="text" id="combatantName" placeholder="Enemy Name">
             <input type="number" id="combatantInitiative" placeholder="Initiative" min="1" max="50">
-            <input type="number" id="combatantMaxHP" placeholder="Max HP" min="1">
-            <input type="number" id="combatantCurrentHP" placeholder="Current HP" min="0">
             <div class="modal-buttons">
                 <button class="btn-secondary" onclick="addCombatant()">Add</button>
                 <button class="btn-danger" onclick="closeAddCombatantModal()">Cancel</button>
@@ -632,7 +607,8 @@
     
     <script>
         // Global variables - declare these first
-        let characters = ["Kellam", "Aneurin", "Cledwyn", "Artin", "Grim", "Ally"];
+        let characters = ["Kellam", "Aneurin", "Cledwyn", "Artin", "Grim", "Findo", "Douglas"];
+        let mainCharacters = ["Kellam", "Aneurin", "Cledwyn", "Artin", "Grim", "Findo", "Douglas"];
         let activeBuffs = [];
         let customSpells = {};
         let isLoadingFromFirebase = false;
@@ -807,8 +783,22 @@
                 combatants = data.combatants || [];
                 currentTurnIndex = data.currentTurnIndex || 0;
                 currentRound = data.currentRound || 1;
-                renderInitiativeList();
+            } else {
+                // First time load - initialize with main characters
+                combatants = [];
+                mainCharacters.forEach((name) => {
+                    combatants.push({
+                        id: `main-${name}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                        name,
+                        initiative: 10,
+                        isMainCharacter: true
+                    });
+                });
+                currentTurnIndex = 0;
+                currentRound = 1;
+                saveInitiativeToFirebase();
             }
+            renderInitiativeList();
         });
         
         // Initiative Functions
@@ -820,17 +810,13 @@
             document.getElementById('addCombatantModal').style.display = 'none';
             document.getElementById('combatantName').value = '';
             document.getElementById('combatantInitiative').value = '';
-            document.getElementById('combatantMaxHP').value = '';
-            document.getElementById('combatantCurrentHP').value = '';
         }
         
         function addCombatant() {
             const name = document.getElementById('combatantName').value.trim();
             const initiative = parseInt(document.getElementById('combatantInitiative').value);
-            const maxHP = parseInt(document.getElementById('combatantMaxHP').value);
-            const currentHP = parseInt(document.getElementById('combatantCurrentHP').value);
             
-            if (!name || isNaN(initiative) || isNaN(maxHP) || isNaN(currentHP)) {
+            if (!name || isNaN(initiative)) {
                 alert('Please fill in all fields');
                 return;
             }
@@ -839,8 +825,7 @@
                 id: `combatant-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                 name,
                 initiative,
-                maxHP,
-                currentHP
+                isMainCharacter: false
             });
             
             combatants.sort((a, b) => b.initiative - a.initiative);
@@ -855,52 +840,78 @@
             document.getElementById('roundCounter').textContent = `Round ${currentRound}`;
             
             if (combatants.length === 0) {
-                list.innerHTML = '<p style="text-align: center; color: #8B7355; padding: 20px;">No combatants yet. Click "Add Combatant" to begin!</p>';
+                list.innerHTML = '<p style="text-align: center; color: #8B7355; padding: 20px;">Click "Reset Combat" to load main characters!</p>';
                 return;
             }
             
             combatants.forEach((combatant, index) => {
                 const item = document.createElement('div');
-                item.className = `initiative-item ${index === currentTurnIndex ? 'active' : ''} ${combatant.currentHP <= 0 ? 'dead' : ''}`;
+                item.className = `initiative-item ${index === currentTurnIndex ? 'active' : ''}`;
                 
-                const hpPercent = (combatant.currentHP / combatant.maxHP) * 100;
-                const hpClass = hpPercent <= 30 ? 'low' : '';
+                const nameDiv = document.createElement('div');
+                nameDiv.className = 'combatant-name';
+                nameDiv.textContent = combatant.name;
                 
-                item.innerHTML = `
-                    <div class="initiative-number">${combatant.initiative}</div>
-                    <div class="combatant-name">${combatant.name}${combatant.currentHP <= 0 ? ' 💀' : ''}</div>
-                    <div class="hp-display">
-                        <div class="hp-bar">
-                            <div class="hp-fill ${hpClass}" style="width: ${hpPercent}%"></div>
-                            <div class="hp-text">${combatant.currentHP}/${combatant.maxHP}</div>
-                        </div>
-                    </div>
-                    <div class="hp-input-group">
-                        <input type="number" class="hp-input" value="${combatant.currentHP}" 
-                               onchange="updateHP('${combatant.id}', this.value)" 
-                               min="0" max="${combatant.maxHP}">
-                    </div>
-                    <button class="btn-danger btn-small" onclick="removeCombatant('${combatant.id}')">Remove</button>
-                `;
+                const controlsDiv = document.createElement('div');
+                controlsDiv.className = 'initiative-controls-box';
+                
+                const initInput = document.createElement('input');
+                initInput.type = 'number';
+                initInput.className = 'initiative-number';
+                initInput.value = combatant.initiative;
+                initInput.min = 1;
+                initInput.max = 50;
+                initInput.addEventListener('change', function() {
+                    updateInitiative(combatant.id, this.value);
+                });
+                
+                controlsDiv.appendChild(initInput);
+                
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'remove-combatant-btn';
+                removeBtn.textContent = 'Remove';
+                removeBtn.addEventListener('click', function() {
+                    removeCombatant(combatant.id);
+                });
+                
+                item.appendChild(nameDiv);
+                item.appendChild(controlsDiv);
+                item.appendChild(removeBtn);
+                
                 list.appendChild(item);
             });
         }
         
-        function updateHP(id, newHP) {
+        function updateInitiative(id, newInitiative) {
             const combatant = combatants.find(c => c.id === id);
             if (combatant) {
-                combatant.currentHP = Math.max(0, Math.min(parseInt(newHP), combatant.maxHP));
+                combatant.initiative = Math.max(1, Math.min(50, parseInt(newInitiative) || 1));
+                combatants.sort((a, b) => b.initiative - a.initiative);
+                
+                // Update current turn index to follow the same character
+                const currentCombatantId = combatants[currentTurnIndex]?.id;
+                if (currentCombatantId) {
+                    currentTurnIndex = combatants.findIndex(c => c.id === currentCombatantId);
+                }
+                
                 saveInitiativeToFirebase();
             }
         }
         
         function removeCombatant(id) {
-            if (confirm('Remove this combatant?')) {
+            if (confirm('Remove this combatant from initiative?')) {
+                const removedIndex = combatants.findIndex(c => c.id === id);
                 combatants = combatants.filter(c => c.id !== id);
-                if (currentTurnIndex >= combatants.length) {
+                
+                // Adjust current turn if needed
+                if (currentTurnIndex > removedIndex) {
+                    currentTurnIndex--;
+                } else if (currentTurnIndex >= combatants.length && combatants.length > 0) {
                     currentTurnIndex = 0;
                 }
+                
                 saveInitiativeToFirebase();
+                renderInitiativeList(); // Force immediate UI update
             }
         }
         
@@ -918,8 +929,20 @@
         }
         
         function resetInitiative() {
-            if (confirm('Reset initiative and clear all combatants?')) {
+            if (confirm('Reset initiative and load main characters?')) {
                 combatants = [];
+                
+                // Load main characters with default initiative 10
+                mainCharacters.forEach((name, index) => {
+                    combatants.push({
+                        id: `main-${name}-${Date.now()}`,
+                        name,
+                        initiative: 10,
+                        isMainCharacter: true
+                    });
+                });
+                
+                combatants.sort((a, b) => b.initiative - a.initiative);
                 currentTurnIndex = 0;
                 currentRound = 1;
                 saveInitiativeToFirebase();
@@ -1492,6 +1515,19 @@
         // Initialize on load
         window.onload = function() {
             initializeTable();
+            
+            // If no combatants exist, load main characters immediately
+            if (combatants.length === 0) {
+                mainCharacters.forEach((name) => {
+                    combatants.push({
+                        id: `main-${name}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                        name,
+                        initiative: 10,
+                        isMainCharacter: true
+                    });
+                });
+                renderInitiativeList();
+            }
         };
     </script>
 </body>
