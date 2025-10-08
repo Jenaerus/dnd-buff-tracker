@@ -31,8 +31,44 @@
             background: linear-gradient(135deg, #8B4513 0%, #A0522D 50%, #964B00 100%);
             color: #FFF8DC;
             padding: 10px 30px;
-            text-align: right;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             border-bottom: 3px solid #654321;
+        }
+        
+        .time-tracker-header {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .round-counter {
+            background: rgba(255, 248, 220, 0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 1em;
+            font-weight: bold;
+            color: #FFF8DC;
+        }
+        
+        .time-tracker-header input,
+        .time-tracker-header select {
+            padding: 5px 10px;
+            border: 1px solid #654321;
+            border-radius: 4px;
+            font-size: 14px;
+            background: #FFFAF0;
+            color: #5D4037;
+        }
+        
+        .time-tracker-header input {
+            width: 50px;
+        }
+        
+        .time-tracker-header button {
+            padding: 5px 15px;
+            font-size: 13px;
         }
         
         .sync-status {
@@ -209,21 +245,6 @@
         .btn-small {
             padding: 5px 10px;
             font-size: 12px;
-        }
-        
-        .time-controls {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            background: #FFF8DC;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(101, 67, 33, 0.2);
-        }
-        
-        .time-controls label {
-            color: #5D4037;
-            font-weight: 600;
         }
         
         .spell-tabs {
@@ -453,31 +474,28 @@
             padding: 5px 15px;
             font-size: 12px;
         }
-        
-        .round-counter {
-            background: #FFF8DC;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-size: 1.2em;
-            font-weight: bold;
-            color: #8B4513;
-            display: inline-block;
-        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
+            <div class="time-tracker-header">
+                <div class="round-counter" id="roundCounter">Round 1</div>
+                <input type="number" id="timeAmount" value="1" min="1">
+                <select id="timeUnit">
+                    <option value="round">Round(s)</option>
+                    <option value="minute">Minute(s)</option>
+                    <option value="hour">Hour(s)</option>
+                </select>
+                <button class="btn-primary btn-small" onclick="advanceTime()">Advance</button>
+            </div>
             <div class="sync-status" id="syncStatus">⚪ Connecting...</div>
         </div>
         
         <!-- Initiative Tracker Section -->
         <div class="initiative-section">
             <div class="initiative-header">
-                <div>
-                    <h2>⚔️ Initiative Tracker</h2>
-                    <div class="round-counter" id="roundCounter">Round 1</div>
-                </div>
+                <h2>⚔️ Initiative Tracker</h2>
                 <div class="initiative-controls">
                     <button class="btn-secondary" onclick="showAddCombatantModal()">➕ Add Enemy</button>
                     <button class="btn-primary" onclick="nextTurn()">▶️ Next Turn</button>
@@ -490,19 +508,6 @@
         </div>
         
         <div class="controls">
-            <div class="control-section">
-                <div class="time-controls">
-                    <label><strong>⏱️ Time Tracker:</strong></label>
-                    <input type="number" id="timeAmount" value="1" min="1">
-                    <select id="timeUnit">
-                        <option value="round">Round(s)</option>
-                        <option value="minute">Minute(s)</option>
-                        <option value="hour">Hour(s)</option>
-                    </select>
-                    <button class="btn-primary" onclick="advanceTime()">Advance Time</button>
-                </div>
-            </div>
-            
             <div class="control-section">
                 <button class="btn-primary" onclick="addSpellRow()">➕ Add Spell Row</button>
                 <button class="btn-secondary" onclick="showCustomSpellModal()">✨ Add Custom Spell</button>
