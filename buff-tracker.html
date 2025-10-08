@@ -301,6 +301,27 @@
             font-size: 0.9em;
             margin-top: 5px;
         }
+        
+        .character-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .character-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: #FAEBD7;
+            border-radius: 5px;
+        }
+        
+        .character-item button {
+            padding: 5px 15px;
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
@@ -329,6 +350,7 @@
                 <button class="btn-primary" onclick="addSpellRow()">➕ Add Spell Row</button>
                 <button class="btn-secondary" onclick="showCustomSpellModal()">✨ Add Custom Spell</button>
                 <button class="btn-secondary" onclick="showManageSpellsModal()">📋 Manage Spell Lists</button>
+                <button class="btn-secondary" onclick="showManageCharactersModal()">👥 Manage Characters</button>
                 <button class="btn-danger" onclick="clearAll()">🗑️ Clear All</button>
             </div>
         </div>
@@ -388,6 +410,21 @@
             </div>
         </div>
     </div>
+    
+    <!-- Manage Characters Modal -->
+    <div id="manageCharactersModal" class="modal">
+        <div class="modal-content">
+            <h2>👥 Manage Characters</h2>
+            <div class="character-list" id="characterList">
+                <!-- Character list will be populated here -->
+            </div>
+            <input type="text" id="newCharacterName" placeholder="Enter new character name">
+            <div class="modal-buttons">
+                <button class="btn-secondary" onclick="addCharacter()">Add Character</button>
+                <button class="btn-danger" onclick="closeManageCharactersModal()">Close</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -395,7 +432,7 @@
     
     <script>
         // 🔥 FIREBASE CONFIGURATION - REPLACE THIS WITH YOUR CONFIG FROM FIREBASE CONSOLE
-        const firebaseConfig = {
+      const firebaseConfig = {
   apiKey: "AIzaSyDuOL3xQZ1kVZSnFTGQcraR4IkJ6lcDCQQ",
   authDomain: "jenearus-buff-tracker.firebaseapp.com",
   databaseURL: "https://jenearus-buff-tracker-default-rtdb.firebaseio.com",
@@ -405,12 +442,12 @@
   appId: "1:110990836637:web:ac808b150052909f8a6574"
 };
 
-
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
         const buffRef = database.ref('buffs');
         const customSpellsRef = database.ref('customSpells');
+        const charactersRef = database.ref('characters');
         
         // Connection status
         const connectedRef = database.ref('.info/connected');
@@ -543,10 +580,19 @@
             ]
         };
         
-        const characters = ["Kellam", "Aneurin", "Cledwyn", "Artin", "Grim", "Findo", "Doug"];
+        let characters = ["Kellam", "Aneurin", "Cledwyn", "Artin", "Grim", "Ally"];
         let activeBuffs = [];
         let customSpells = {};
         let isLoadingFromFirebase = false;
+        
+        // Load characters from Firebase
+        charactersRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data && Array.isArray(data)) {
+                characters = data;
+                rebuildTable();
+            }
+        });
         
         // Initialize the table
         function initializeTable() {
@@ -566,12 +612,7 @@
                                 <th style="width: 20%">Spell Name</th>
                                 <th style="width: 10%">Caster Level</th>
                                 <th style="width: 15%">Duration</th>
-                                <th style="width: 7%">Kellam</th>
-                                <th style="width: 7%">Aneurin</th>
-                                <th style="width: 7%">Cledwyn</th>
-                                <th style="width: 7%">Artin</th>
-                                <th style="width: 7%">Grim</th>
-                                <th style="width: 7%">Ally</th>
+                                ${characters.map(char => `<th style="width: ${Math.floor(35/characters.length)}%">${char}</th>`).join('')}
                                 <th style="width: 13%">Actions</th>
                             </tr>
                         </thead>
@@ -581,6 +622,18 @@
                 `;
                 buffTable.appendChild(section);
             }
+        }
+        
+        // Rebuild the entire table (when characters change)
+        function rebuildTable() {
+            if (isLoadingFromFirebase) return;
+            
+            const currentBuffs = [...activeBuffs];
+            initializeTable();
+            
+            currentBuffs.forEach(buff => {
+                addSpellRow(buff.level, buff);
+            });
         }
         
         // Add a new spell row
@@ -644,7 +697,14 @@
                 characters: buffData ? buffData.characters : {}
             };
             
-            activeBuffs.push(newBuff);
+            if (!buffData) {
+                activeBuffs.push(newBuff);
+            } else {
+                const existingIndex = activeBuffs.findIndex(b => b.id === rowId);
+                if (existingIndex === -1) {
+                    activeBuffs.push(newBuff);
+                }
+            }
             
             if (buffData) {
                 const spellSelect = document.getElementById(`spell-select-${rowId}`);
@@ -861,6 +921,58 @@
             }
         });
         
+        // Character Management Functions
+        function showManageCharactersModal() {
+            document.getElementById('manageCharactersModal').style.display = 'block';
+            displayCharacterList();
+        }
+        
+        function closeManageCharactersModal() {
+            document.getElementById('manageCharactersModal').style.display = 'none';
+            document.getElementById('newCharacterName').value = '';
+        }
+        
+        function displayCharacterList() {
+            const list = document.getElementById('characterList');
+            list.innerHTML = '';
+            
+            characters.forEach((char, index) => {
+                const item = document.createElement('div');
+                item.className = 'character-item';
+                item.innerHTML = `
+                    <strong>${char}</strong>
+                    <button class="btn-danger" onclick="removeCharacter(${index})">Remove</button>
+                `;
+                list.appendChild(item);
+            });
+        }
+        
+        function addCharacter() {
+            const name = document.getElementById('newCharacterName').value.trim();
+            if (!name) {
+                alert('Please enter a character name');
+                return;
+            }
+            
+            if (characters.includes(name)) {
+                alert('This character already exists');
+                return;
+            }
+            
+            characters.push(name);
+            charactersRef.set(characters);
+            document.getElementById('newCharacterName').value = '';
+            displayCharacterList();
+        }
+        
+        function removeCharacter(index) {
+            if (confirm(`Remove ${characters[index]} from the party?`)) {
+                characters.splice(index, 1);
+                charactersRef.set(characters);
+                displayCharacterList();
+            }
+        }
+        
         // Show custom spell modal
         function showCustomSpellModal() {
             document.getElementById('customSpellModal').style.display = 'block';
@@ -1015,5 +1127,4 @@
         };
     </script>
 </body>
-
 </html>
