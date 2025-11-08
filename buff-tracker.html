@@ -1526,7 +1526,7 @@ function advanceTime() {
         
        // Initialize on load
 window.onload = function() {
-    // Wait for Firebase to load custom spells before initializing
+    // Load custom spells from Firebase first
     customSpellsRef.once('value').then((snapshot) => {
         const data = snapshot.val();
         if (data) {
@@ -1535,6 +1535,15 @@ window.onload = function() {
         
         // Now initialize the table with custom spells loaded
         initializeTable();
+        
+        // Set up listener for future custom spell changes
+        customSpellsRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                customSpells = data;
+                refreshAllSpellDropdowns();
+            }
+        });
         
         // If no combatants exist, load main characters immediately
         if (combatants.length === 0) {
@@ -1553,6 +1562,7 @@ window.onload = function() {
     </script>
 </body>
 </html>
+
 
 
 
