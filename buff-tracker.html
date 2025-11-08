@@ -930,11 +930,10 @@
     if (currentTurnIndex >= combatants.length) {
         currentTurnIndex = 0;
         currentRound++;
-        // ✅ Now cleanly advance exactly 1 round
         advanceTimeByAmount(1, 'round');
     }
     
-    saveInitiativeToFirebase();
+    saveInitiativeToFirebase(); // Always save initiative
 }
         
         function resetInitiative() {
@@ -1545,6 +1544,7 @@ function advanceTime() {
     </script>
 </body>
 </html>
+
 
 
 
