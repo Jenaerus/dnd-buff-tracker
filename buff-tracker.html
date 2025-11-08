@@ -507,13 +507,12 @@
         <!-- Initiative Tracker Section -->
         <div class="initiative-section">
             <div class="initiative-header">
-                <h2>⚔️ Initiative Tracker</h2>
-                <div class="initiative-controls">
-                    <button class="btn-secondary" onclick="showAddCombatantModal()">➕ Add Combatant</button>
-                    <button class="btn-primary" onclick="nextTurn()">▶️ Next Turn</button>
-                    <button class="btn-danger btn-small" onclick="resetInitiative()">Reset Combat</button>
-                </div>
-            </div>
+    <div class="initiative-controls">
+        <button class="btn-secondary" onclick="showAddCombatantModal()">➕ Add Combatant</button>
+        <button class="btn-primary" onclick="nextTurn()">▶️ Next Turn</button>
+    </div>
+    <button class="btn-danger btn-small" onclick="resetInitiative()">Reset Combat</button>
+</div>
             <div class="initiative-list" id="initiativeList">
                 <!-- Initiative items will be generated here -->
             </div>
@@ -1607,6 +1606,7 @@ window.onload = function() {
     </script>
 </body>
 </html>
+
 
 
 
