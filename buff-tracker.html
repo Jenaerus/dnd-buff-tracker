@@ -936,15 +936,11 @@
             ]
         };
         
-        // Load spell descriptions from Firebase and watch for changes
+        // Load spell descriptions from Firebase
         spellDescriptionsRef.on('value', (snapshot) => {
             const data = snapshot.val();
             if (data) {
                 spellDescriptions = data;
-                // Refresh tooltips when descriptions change
-                if (!isLoadingFromFirebase) {
-                    refreshAllSpellDropdowns();
-                }
             }
         });
         
@@ -1772,19 +1768,10 @@
         
         // Initialize on load
         window.onload = function() {
-            // Load spell descriptions first, then custom spells
-            Promise.all([
-                spellDescriptionsRef.once('value'),
-                customSpellsRef.once('value')
-            ]).then(([descSnapshot, spellSnapshot]) => {
-                const descData = descSnapshot.val();
-                if (descData) {
-                    spellDescriptions = descData;
-                }
-                
-                const spellData = spellSnapshot.val();
-                if (spellData) {
-                    customSpells = spellData;
+            customSpellsRef.once('value').then((snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    customSpells = data;
                 }
                 
                 initializeTable();
@@ -1830,10 +1817,6 @@
                     });
                     renderInitiativeList();
                 }
-            }).catch((error) => {
-                console.error('Error loading data:', error);
-                // Initialize anyway if there's an error
-                initializeTable();
             });
         };
     </script>
