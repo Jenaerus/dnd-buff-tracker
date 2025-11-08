@@ -1536,6 +1536,29 @@ window.onload = function() {
         // Now initialize the table with custom spells loaded
         initializeTable();
         
+        // THEN set up the buff listener (after table exists)
+        buffRef.on('value', (snapshot) => {
+            if (isLoadingFromFirebase) return;
+            
+            isLoadingFromFirebase = true;
+            const data = snapshot.val();
+            
+            if (data && Array.isArray(data)) {
+                activeBuffs = [];
+                
+                for (let level = 9; level >= 0; level--) {
+                    const tbody = document.getElementById(`spellLevel${level}`);
+                    if (tbody) tbody.innerHTML = '';
+                }
+                
+                data.forEach(buffData => {
+                    addSpellRow(buffData.level, buffData);
+                });
+            }
+            
+            isLoadingFromFirebase = false;
+        });
+        
         // Set up listener for future custom spell changes
         customSpellsRef.on('value', (snapshot) => {
             const data = snapshot.val();
@@ -1562,6 +1585,7 @@ window.onload = function() {
     </script>
 </body>
 </html>
+
 
 
 
