@@ -524,14 +524,16 @@
         </div>
         
         <div class="controls">
-            <div class="control-section">
-                <button class="btn-primary" onclick="addSpellRow()">➕ Add Spell Row</button>
-                <button class="btn-secondary" onclick="showCustomSpellModal()">✨ Add Custom Spell</button>
-                <button class="btn-secondary" onclick="showManageSpellsModal()">📋 Manage Spell Lists</button>
-                <button class="btn-secondary" onclick="showManageCharactersModal()">👥 Manage Characters</button>
-                <button class="btn-danger" onclick="clearAll()">🗑️ Clear All Buffs</button>
-            </div>
+    <div class="control-section" style="justify-content: space-between;">
+        <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+            <button class="btn-primary" onclick="addSpellRow()">➕ Add Spell Row</button>
+            <button class="btn-secondary" onclick="showCustomSpellModal()">✨ Add Custom Spell</button>
+            <button class="btn-secondary" onclick="showManageSpellsModal()">📋 Manage Spell Lists</button>
+            <button class="btn-secondary" onclick="showManageCharactersModal()">👥 Manage Characters</button>
         </div>
+        <button class="btn-danger" onclick="clearAll()">🗑️ Clear All Buffs</button>
+    </div>
+</div>
         
         <div class="buff-table" id="buffTable">
             <!-- Spell level sections will be generated here -->
@@ -1606,6 +1608,7 @@ window.onload = function() {
     </script>
 </body>
 </html>
+
 
 
 
