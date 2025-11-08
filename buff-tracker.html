@@ -1524,26 +1524,36 @@ function advanceTime() {
             });
         }
         
-        // Initialize on load
-        window.onload = function() {
-            initializeTable();
-            
-            // If no combatants exist, load main characters immediately
-            if (combatants.length === 0) {
-                mainCharacters.forEach((name) => {
-                    combatants.push({
-                        id: `main-${name}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                        name,
-                        initiative: 10,
-                        isMainCharacter: true
-                    });
+       // Initialize on load
+window.onload = function() {
+    // Wait for Firebase to load custom spells before initializing
+    customSpellsRef.once('value').then((snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+            customSpells = data;
+        }
+        
+        // Now initialize the table with custom spells loaded
+        initializeTable();
+        
+        // If no combatants exist, load main characters immediately
+        if (combatants.length === 0) {
+            mainCharacters.forEach((name) => {
+                combatants.push({
+                    id: `main-${name}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                    name,
+                    initiative: 10,
+                    isMainCharacter: true
                 });
-                renderInitiativeList();
-            }
-        };
+            });
+            renderInitiativeList();
+        }
+    });
+};
     </script>
 </body>
 </html>
+
 
 
 
