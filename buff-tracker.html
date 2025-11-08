@@ -1772,18 +1772,19 @@
         
         // Initialize on load
         window.onload = function() {
-            // Load spell descriptions first
-            spellDescriptionsRef.once('value').then((descSnapshot) => {
+            // Load spell descriptions first, then custom spells
+            Promise.all([
+                spellDescriptionsRef.once('value'),
+                customSpellsRef.once('value')
+            ]).then(([descSnapshot, spellSnapshot]) => {
                 const descData = descSnapshot.val();
                 if (descData) {
                     spellDescriptions = descData;
                 }
                 
-                return customSpellsRef.once('value');
-            }).then((snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    customSpells = data;
+                const spellData = spellSnapshot.val();
+                if (spellData) {
+                    customSpells = spellData;
                 }
                 
                 initializeTable();
@@ -1829,6 +1830,10 @@
                     });
                     renderInitiativeList();
                 }
+            }).catch((error) => {
+                console.error('Error loading data:', error);
+                // Initialize anyway if there's an error
+                initializeTable();
             });
         };
     </script>
