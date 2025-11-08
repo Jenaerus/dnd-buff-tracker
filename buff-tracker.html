@@ -996,33 +996,20 @@
         }
         
         function saveTooltip() {
-    alert('saveTooltip called!');
+    if (!currentTooltipSpell) return;
     
-    if (!currentTooltipSpell) {
-        alert('No spell selected!');
-        return;
-    }
-    
-    alert('Current spell: ' + currentTooltipSpell.name);
-    
-    const descElement = document.getElementById('tooltipDescription');
-    alert('Element found: ' + (descElement ? 'YES' : 'NO'));
-    
-    const description = descElement ? descElement.value.trim() : '';
-    alert('Description: "' + description + '"');
+    const description = document.getElementById('tooltipDescription').value.trim();
     
     if (description) {
         spellDescriptions[currentTooltipSpell.name] = description;
-        alert('Saved to local object');
     } else {
         delete spellDescriptions[currentTooltipSpell.name];
-        alert('Deleted (empty description)');
     }
     
     spellDescriptionsRef.set(spellDescriptions);
-    alert('Sent to Firebase');
-    
     closeTooltipCreatorModal();
+    
+    // Refresh all spell rows to update tooltips
     refreshAllSpellDropdowns();
 }
         
@@ -1840,6 +1827,7 @@
     </script>
 </body>
 </html>
+
 
 
 
