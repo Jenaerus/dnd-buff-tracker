@@ -1321,37 +1321,40 @@
             }
             
             if (buffData) {
-                const spellSelect = document.getElementById(`spell-select-${rowId}`);
-                const clInput = document.getElementById(`cl-${rowId}`);
-                
-                if (spellSelect && buffData.spell) {
-                    spellSelect.value = buffData.spell;
-                }
-                if (clInput) {
-                    clInput.value = buffData.casterLevel;
-                }
-                
-                updateDuration(rowId);
-                
-                const durationRounds = document.getElementById(`duration-rounds-${rowId}`);
-                const durationDisplay = document.getElementById(`duration-${rowId}`);
-                if (durationRounds && durationDisplay) {
-                    durationRounds.value = buffData.remainingRounds;
-                    durationDisplay.textContent = formatDuration(buffData.remainingRounds);
-                    if (buffData.remainingRounds === 0) {
-                        durationDisplay.classList.add('expired');
-                    }
-                }
-                
-                Object.entries(buffData.characters || {}).forEach(([char, checked]) => {
-                    const checkbox = document.getElementById(`char-${rowId}-${char}`);
-                    if (checkbox) {
-                        checkbox.checked = checked;
-                    }
-                });
-            } else {
-                saveToFirebase();
-            }
+    const spellSelect = document.getElementById(`spell-select-${rowId}`);
+    const clInput = document.getElementById(`cl-${rowId}`);
+    
+    if (spellSelect && buffData.spell) {
+        spellSelect.value = buffData.spell;
+    }
+    if (clInput) {
+        clInput.value = buffData.casterLevel;
+    }
+    
+    updateDuration(rowId);
+    
+    const durationRounds = document.getElementById(`duration-rounds-${rowId}`);
+    const durationDisplay = document.getElementById(`duration-${rowId}`);
+    if (durationRounds && durationDisplay) {
+        durationRounds.value = buffData.remainingRounds;
+        durationDisplay.textContent = formatDuration(buffData.remainingRounds);
+        if (buffData.remainingRounds === 0) {
+            durationDisplay.classList.add('expired');
+        }
+    }
+    
+    Object.entries(buffData.characters || {}).forEach(([char, checked]) => {
+        const checkbox = document.getElementById(`char-${rowId}-${char}`);
+        if (checkbox) {
+            checkbox.checked = checked;
+        }
+    });
+    
+    // Ensure tooltips are displayed after all DOM elements are ready
+    setTimeout(() => updateSpellTooltip(rowId), 100);
+} else {
+    saveToFirebase();
+}
         }
         
         // Open tooltip creator from spell row
@@ -1822,3 +1825,4 @@
     </script>
 </body>
 </html>
+
