@@ -502,30 +502,30 @@
         }
 
         .spell-tooltip .tooltiptext {
-    visibility: hidden;
-    width: 400px;
-    background-color: #5D4037;
-    color: #FFF8DC;
-    text-align: left;
-    border-radius: 8px;
-    padding: 12px;
-    position: absolute;
-    z-index: 1000;
-    bottom: 125%;
-    left: 0;
-    opacity: 0;
-    transition: opacity 0.3s;
-    font-size: 13px;
-    line-height: 1.4;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-    border: 2px solid #8B4513;
-}
+            visibility: hidden;
+            width: 400px;
+            background-color: #5D4037;
+            color: #FFF8DC;
+            text-align: left;
+            border-radius: 8px;
+            padding: 12px;
+            position: absolute;
+            z-index: 1000;
+            bottom: 125%;
+            left: 0;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 13px;
+            line-height: 1.4;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            border: 2px solid #8B4513;
+        }
 
         .spell-tooltip .tooltiptext::after {
             content: "";
             position: absolute;
             top: 100%;
-            left: 50%;
+            left: 20px;
             margin-left: -5px;
             border-width: 5px;
             border-style: solid;
@@ -542,6 +542,20 @@
             font-size: 14px;
             margin-bottom: 8px;
             color: #FFE4B5;
+        }
+
+        .edit-tooltip-btn {
+            background: #8B4513;
+            color: #FFF8DC;
+            padding: 3px 8px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+
+        .edit-tooltip-btn:hover {
+            background: #A0522D;
         }
     </style>
 </head>
@@ -638,7 +652,6 @@
                 <option value="0">0 Level (Cantrips)</option>
             </select>
             <input type="text" id="customSpellDuration" placeholder="Duration Formula (e.g., '1 round/level', '10 min/level')">
-            <input type="text" id="customSpellDescription" placeholder="Spell description (optional)" style="margin-top: 10px;">
             <div class="modal-buttons">
                 <button class="btn-secondary" onclick="addCustomSpell()">Add Spell</button>
                 <button class="btn-danger" onclick="closeCustomSpellModal()">Cancel</button>
@@ -686,6 +699,24 @@
         </div>
     </div>
 
+    <!-- Edit Tooltip Modal -->
+    <div id="editTooltipModal" class="modal">
+        <div class="modal-content">
+            <h2>Edit Spell Tooltip</h2>
+            <p style="color: #8B7355; margin-bottom: 15px;">
+                Spell: <strong id="tooltipSpellName"></strong>
+            </p>
+            <textarea id="tooltipDescription" 
+                      placeholder="Enter spell description..." 
+                      style="width: 100%; height: 150px; padding: 10px; border: 1px solid #8B7355; border-radius: 4px; background: #FFFAF0; resize: vertical; font-family: inherit;">
+            </textarea>
+            <div class="modal-buttons">
+                <button class="btn-secondary" onclick="saveTooltip()">Save</button>
+                <button class="btn-danger" onclick="closeEditTooltipModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Firebase SDK -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.22.0/firebase-app-compat.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.22.0/firebase-database-compat.min.js"></script>
@@ -701,6 +732,7 @@
         let currentTurnIndex = 0;
         let currentRound = 1;
         let currentSpellLevel = 3;
+        let currentEditingRowId = null;
         
         // Firebase Configuration
         const firebaseConfig = {
@@ -734,8 +766,7 @@
             }
         });
         
-        // Spell database - add description field to spells you want tooltips for
-        // You can add your own descriptions from d20srd.org
+        // Spell database - you can add descriptions by clicking the edit button
         const spellDatabase = {
             9: [
                 { name: "Foresight", duration: "10 min/level", description: "" },
@@ -746,7 +777,7 @@
                 { name: "Etherealness", duration: "1 min/level", description: "" }
             ],
             8: [
-                { name: "Mind Blank", duration: "24 hours", description: "Protects subject from mental/emotional magic, information gathering, and scrying. Blocks detection spells and mind-affecting effects." },
+                { name: "Mind Blank", duration: "24 hours", description: "" },
                 { name: "Holy Aura", duration: "1 round/level", description: "" },
                 { name: "Protection from Spells", duration: "10 min/level", description: "" },
                 { name: "Moment of Prescience", duration: "1 hour/level or until discharged", description: "" },
@@ -1140,6 +1171,7 @@
                                 `<option value="${spell.name}" data-duration="${spell.duration}" data-description="${(spell.description || '').replace(/"/g, '&quot;')}">${spell.name}</option>`
                             ).join('')}
                         </select>
+                        <button class="edit-tooltip-btn" onclick="showEditTooltipModal('${rowId}')" id="edit-tooltip-btn-${rowId}" style="display: none;">✏️</button>
                         <div class="spell-tooltip" id="tooltip-${rowId}" style="display: none;">
                             <span class="spell-info-icon">ℹ️</span>
                             <span class="tooltiptext" id="tooltiptext-${rowId}">
@@ -1259,25 +1291,106 @@
             updateSpellTooltip(rowId);
         }
         
-        // Show/hide spell tooltip based on selection
+        // Show/hide spell tooltip and edit button based on selection
         function updateSpellTooltip(rowId) {
             const spellSelect = document.getElementById(`spell-select-${rowId}`);
             const tooltip = document.getElementById(`tooltip-${rowId}`);
             const tooltiptext = document.getElementById(`tooltiptext-${rowId}`);
+            const editBtn = document.getElementById(`edit-tooltip-btn-${rowId}`);
             
-            if (!spellSelect || !tooltip || !tooltiptext) return;
+            if (!spellSelect || !tooltip || !tooltiptext || !editBtn) return;
             
             const selectedOption = spellSelect.options[spellSelect.selectedIndex];
             const description = selectedOption.dataset.description;
             const spellName = selectedOption.value;
             
-            if (spellName && description) {
-                tooltip.style.display = 'block';
-                tooltiptext.querySelector('.spell-name').textContent = spellName;
-                tooltiptext.querySelector('.spell-desc').textContent = description;
+            if (spellName) {
+                // Always show edit button when a spell is selected
+                editBtn.style.display = 'inline-block';
+                
+                // Show tooltip icon only if there's a description
+                if (description) {
+                    tooltip.style.display = 'block';
+                    tooltiptext.querySelector('.spell-name').textContent = spellName;
+                    tooltiptext.querySelector('.spell-desc').textContent = description;
+                } else {
+                    tooltip.style.display = 'none';
+                }
             } else {
+                editBtn.style.display = 'none';
                 tooltip.style.display = 'none';
             }
+        }
+        
+        // Show edit tooltip modal
+        function showEditTooltipModal(rowId) {
+            const spellSelect = document.getElementById(`spell-select-${rowId}`);
+            const selectedOption = spellSelect.options[spellSelect.selectedIndex];
+            const spellName = selectedOption.value;
+            const currentDescription = selectedOption.dataset.description || '';
+            
+            if (!spellName) {
+                alert('Please select a spell first');
+                return;
+            }
+            
+            currentEditingRowId = rowId;
+            document.getElementById('tooltipSpellName').textContent = spellName;
+            document.getElementById('tooltipDescription').value = currentDescription;
+            document.getElementById('editTooltipModal').style.display = 'block';
+        }
+        
+        // Close edit tooltip modal
+        function closeEditTooltipModal() {
+            document.getElementById('editTooltipModal').style.display = 'none';
+            document.getElementById('tooltipDescription').value = '';
+            currentEditingRowId = null;
+        }
+        
+        // Save tooltip description
+        function saveTooltip() {
+            if (!currentEditingRowId) return;
+            
+            const spellSelect = document.getElementById(`spell-select-${currentEditingRowId}`);
+            const selectedOption = spellSelect.options[spellSelect.selectedIndex];
+            const spellName = selectedOption.value;
+            const description = document.getElementById('tooltipDescription').value.trim();
+            
+            const buff = activeBuffs.find(b => b.id === currentEditingRowId);
+            if (buff) {
+                let found = false;
+                
+                // First check custom spells
+                if (customSpells[buff.level]) {
+                    const customSpell = customSpells[buff.level].find(s => s.name === spellName);
+                    if (customSpell) {
+                        customSpell.description = description;
+                        found = true;
+                    }
+                }
+                
+                // Then check default spells
+                if (!found && spellDatabase[buff.level]) {
+                    const defaultSpell = spellDatabase[buff.level].find(s => s.name === spellName);
+                    if (defaultSpell) {
+                        defaultSpell.description = description;
+                        found = true;
+                    }
+                }
+                
+                // Update the option's data attribute
+                selectedOption.dataset.description = description;
+                
+                // Refresh the tooltip display
+                updateSpellTooltip(currentEditingRowId);
+                
+                // Save to Firebase if it's a custom spell
+                if (customSpells[buff.level] && customSpells[buff.level].find(s => s.name === spellName)) {
+                    saveToFirebase();
+                }
+            }
+            
+            closeEditTooltipModal();
         }
         
         // Calculate duration in rounds
@@ -1462,15 +1575,13 @@
             document.getElementById('customSpellName').value = '';
             document.getElementById('customSpellLevel').value = '';
             document.getElementById('customSpellDuration').value = '';
-            document.getElementById('customSpellDescription').value = '';
         }
         
-        // Add custom spell with optional description
+        // Add custom spell
         function addCustomSpell() {
             const name = document.getElementById('customSpellName').value;
             const level = document.getElementById('customSpellLevel').value;
             const duration = document.getElementById('customSpellDuration').value;
-            const description = document.getElementById('customSpellDescription').value;
             
             if (!name || !level || !duration) {
                 alert('Please fill in spell name, level, and duration');
@@ -1481,7 +1592,7 @@
                 customSpells[level] = [];
             }
             
-            customSpells[level].push({ name, duration, description: description || '' });
+            customSpells[level].push({ name, duration, description: '' });
             closeCustomSpellModal();
             saveToFirebase();
             refreshAllSpellDropdowns();
