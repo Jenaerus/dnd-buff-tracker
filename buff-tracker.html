@@ -1352,6 +1352,8 @@
             } else {
                 saveToFirebase();
             }
+            // Ensure tooltip displays after loading from Firebase
+updateSpellTooltip(rowId);
         }
         
         // Open tooltip creator from spell row
@@ -1822,3 +1824,4 @@
     </script>
 </body>
 </html>
+
