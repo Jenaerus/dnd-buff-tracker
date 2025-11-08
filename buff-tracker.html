@@ -923,18 +923,19 @@
             }
         }
         
-        function nextTurn() {
-            if (combatants.length === 0) return;
-            
-            currentTurnIndex++;
-            if (currentTurnIndex >= combatants.length) {
-                currentTurnIndex = 0;
-                currentRound++;
-                advanceTime();
-            }
-            
-            saveInitiativeToFirebase();
-        }
+       function nextTurn() {
+    if (combatants.length === 0) return;
+    
+    currentTurnIndex++;
+    if (currentTurnIndex >= combatants.length) {
+        currentTurnIndex = 0;
+        currentRound++;
+        // ✅ Now cleanly advance exactly 1 round
+        advanceTimeByAmount(1, 'round');
+    }
+    
+    saveInitiativeToFirebase();
+}
         
         function resetInitiative() {
             if (confirm('Reset initiative and load main characters?')) {
@@ -1229,35 +1230,39 @@
             }
         }
         
-        // Advance time
-        function advanceTime() {
-            const amount = parseInt(document.getElementById('timeAmount').value);
-            const unit = document.getElementById('timeUnit').value;
+        // New helper function that does the actual work
+function advanceTimeByAmount(amount, unit) {
+    let roundsToAdvance = amount;
+    if (unit === 'minute') roundsToAdvance = amount * 10;
+    if (unit === 'hour') roundsToAdvance = amount * 600;
+    
+    activeBuffs.forEach(buff => {
+        if (buff.remainingRounds > 0) {
+            buff.remainingRounds = Math.max(0, buff.remainingRounds - roundsToAdvance);
             
-            let roundsToAdvance = amount;
-            if (unit === 'minute') roundsToAdvance = amount * 10;
-            if (unit === 'hour') roundsToAdvance = amount * 600;
+            const durationRounds = document.getElementById(`duration-rounds-${buff.id}`);
+            const durationDisplay = document.getElementById(`duration-${buff.id}`);
             
-            activeBuffs.forEach(buff => {
-                if (buff.remainingRounds > 0) {
-                    buff.remainingRounds = Math.max(0, buff.remainingRounds - roundsToAdvance);
-                    
-                    const durationRounds = document.getElementById(`duration-rounds-${buff.id}`);
-                    const durationDisplay = document.getElementById(`duration-${buff.id}`);
-                    
-                    if (durationRounds && durationDisplay) {
-                        durationRounds.value = buff.remainingRounds;
-                        durationDisplay.textContent = formatDuration(buff.remainingRounds);
-                        
-                        if (buff.remainingRounds === 0) {
-                            durationDisplay.classList.add('expired');
-                        }
-                    }
+            if (durationRounds && durationDisplay) {
+                durationRounds.value = buff.remainingRounds;
+                durationDisplay.textContent = formatDuration(buff.remainingRounds);
+                
+                if (buff.remainingRounds === 0) {
+                    durationDisplay.classList.add('expired');
                 }
-            });
-            
-            saveToFirebase();
+            }
         }
+    });
+    
+    saveToFirebase();
+}
+
+// UI button calls this
+function advanceTime() {
+    const amount = parseInt(document.getElementById('timeAmount').value);
+    const unit = document.getElementById('timeUnit').value;
+    advanceTimeByAmount(amount, unit);
+}
         
         // Save to Firebase
         function saveToFirebase() {
@@ -1540,6 +1545,7 @@
     </script>
 </body>
 </html>
+
 
 
 
