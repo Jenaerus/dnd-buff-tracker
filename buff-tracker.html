@@ -422,13 +422,27 @@
             color: #5D4037;
         }
         
-        .modal input, .modal select {
+        .modal input, .modal select, .modal textarea {
             width: 100%;
             margin-bottom: 15px;
             padding: 10px;
             border: 1px solid #8B7355;
             border-radius: 4px;
             background: #FFFAF0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .modal textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .char-counter {
+            text-align: right;
+            font-size: 0.9em;
+            color: #8B7355;
+            margin-top: -10px;
+            margin-bottom: 10px;
         }
         
         .spell-item {
@@ -502,24 +516,24 @@
         }
 
         .spell-tooltip .tooltiptext {
-    visibility: hidden;
-    width: 400px;
-    background-color: #5D4037;
-    color: #FFF8DC;
-    text-align: left;
-    border-radius: 8px;
-    padding: 12px;
-    position: absolute;
-    z-index: 1000;
-    bottom: 125%;
-    left: 0;
-    opacity: 0;
-    transition: opacity 0.3s;
-    font-size: 13px;
-    line-height: 1.4;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-    border: 2px solid #8B4513;
-}
+            visibility: hidden;
+            width: 400px;
+            background-color: #5D4037;
+            color: #FFF8DC;
+            text-align: left;
+            border-radius: 8px;
+            padding: 12px;
+            position: absolute;
+            z-index: 1000;
+            bottom: 125%;
+            left: 0;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 13px;
+            line-height: 1.4;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            border: 2px solid #8B4513;
+        }
 
         .spell-tooltip .tooltiptext::after {
             content: "";
@@ -542,6 +556,36 @@
             font-size: 14px;
             margin-bottom: 8px;
             color: #FFE4B5;
+        }
+
+        .create-tooltip-btn {
+            padding: 2px 8px;
+            font-size: 11px;
+            background: #8B4513;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-left: 5px;
+        }
+
+        .create-tooltip-btn:hover {
+            background: #A0522D;
+        }
+
+        .edit-tooltip-btn {
+            padding: 2px 8px;
+            font-size: 11px;
+            background: #D2691E;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-left: 5px;
+        }
+
+        .edit-tooltip-btn:hover {
+            background: #CD853F;
         }
     </style>
 </head>
@@ -638,10 +682,27 @@
                 <option value="0">0 Level (Cantrips)</option>
             </select>
             <input type="text" id="customSpellDuration" placeholder="Duration Formula (e.g., '1 round/level', '10 min/level')">
-            <input type="text" id="customSpellDescription" placeholder="Spell description (optional)" style="margin-top: 10px;">
+            <textarea id="customSpellDescription" placeholder="Spell description (optional, max 250 characters)" maxlength="250"></textarea>
+            <div class="char-counter"><span id="customDescCharCount">0</span>/250</div>
             <div class="modal-buttons">
                 <button class="btn-secondary" onclick="addCustomSpell()">Add Spell</button>
                 <button class="btn-danger" onclick="closeCustomSpellModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tooltip Creator Modal -->
+    <div id="tooltipCreatorModal" class="modal">
+        <div class="modal-content">
+            <h2 id="tooltipModalTitle">Create Tooltip</h2>
+            <p style="color: #5D4037; margin-bottom: 15px;">
+                <strong>Spell:</strong> <span id="tooltipSpellName"></span>
+            </p>
+            <textarea id="tooltipDescription" placeholder="Enter spell description (max 250 characters)" maxlength="250"></textarea>
+            <div class="char-counter"><span id="tooltipCharCount">0</span>/250</div>
+            <div class="modal-buttons">
+                <button class="btn-secondary" onclick="saveTooltip()">Save</button>
+                <button class="btn-danger" onclick="closeTooltipCreatorModal()">Cancel</button>
             </div>
         </div>
     </div>
@@ -696,11 +757,13 @@
         let mainCharacters = ["Kellam", "Aneurin", "Cledwyn", "Artin", "Grim", "Findo", "Douglas"];
         let activeBuffs = [];
         let customSpells = {};
+        let spellDescriptions = {}; // Store custom descriptions
         let isLoadingFromFirebase = false;
         let combatants = [];
         let currentTurnIndex = 0;
         let currentRound = 1;
         let currentSpellLevel = 3;
+        let currentTooltipSpell = null; // Track which spell we're editing tooltip for
         
         // Firebase Configuration
         const firebaseConfig = {
@@ -718,6 +781,7 @@
         const database = firebase.database();
         const buffRef = database.ref('buffs');
         const customSpellsRef = database.ref('customSpells');
+        const spellDescriptionsRef = database.ref('spellDescriptions');
         const charactersRef = database.ref('characters');
         const initiativeRef = database.ref('initiative');
         
@@ -734,125 +798,151 @@
             }
         });
         
-        // Spell database - add description field to spells you want tooltips for
-        // You can add your own descriptions from d20srd.org
+        // Character counter for custom spell modal
+        document.addEventListener('DOMContentLoaded', function() {
+            const customDesc = document.getElementById('customSpellDescription');
+            const customCount = document.getElementById('customDescCharCount');
+            if (customDesc && customCount) {
+                customDesc.addEventListener('input', function() {
+                    customCount.textContent = this.value.length;
+                });
+            }
+            
+            const tooltipDesc = document.getElementById('tooltipDescription');
+            const tooltipCount = document.getElementById('tooltipCharCount');
+            if (tooltipDesc && tooltipCount) {
+                tooltipDesc.addEventListener('input', function() {
+                    tooltipCount.textContent = this.value.length;
+                });
+            }
+        });
+        
+        // Spell database
         const spellDatabase = {
             9: [
-                { name: "Foresight", duration: "10 min/level", description: "" },
-                { name: "Shapechange", duration: "10 min/level", description: "" },
-                { name: "Time Stop", duration: "1d4+1 rounds", description: "" },
-                { name: "Freedom", duration: "instantaneous", description: "" },
-                { name: "Prismatic Sphere", duration: "10 min/level", description: "" },
-                { name: "Etherealness", duration: "1 min/level", description: "" }
+                { name: "Foresight", duration: "10 min/level" },
+                { name: "Shapechange", duration: "10 min/level" },
+                { name: "Time Stop", duration: "1d4+1 rounds" },
+                { name: "Freedom", duration: "instantaneous" },
+                { name: "Prismatic Sphere", duration: "10 min/level" },
+                { name: "Etherealness", duration: "1 min/level" }
             ],
             8: [
-                { name: "Mind Blank", duration: "24 hours", description: "Protects subject from mental/emotional magic, information gathering, and scrying. Blocks detection spells and mind-affecting effects." },
-                { name: "Holy Aura", duration: "1 round/level", description: "" },
-                { name: "Protection from Spells", duration: "10 min/level", description: "" },
-                { name: "Moment of Prescience", duration: "1 hour/level or until discharged", description: "" },
-                { name: "Iron Body", duration: "1 min/level", description: "" },
-                { name: "Greater Spell Immunity", duration: "10 min/level", description: "" }
+                { name: "Mind Blank", duration: "24 hours" },
+                { name: "Holy Aura", duration: "1 round/level" },
+                { name: "Protection from Spells", duration: "10 min/level" },
+                { name: "Moment of Prescience", duration: "1 hour/level or until discharged" },
+                { name: "Iron Body", duration: "1 min/level" },
+                { name: "Greater Spell Immunity", duration: "10 min/level" }
             ],
             7: [
-                { name: "Spell Turning", duration: "10 min/level or until expended", description: "" },
-                { name: "Ethereal Jaunt", duration: "1 round/level", description: "" },
-                { name: "Regenerate", duration: "instantaneous", description: "" },
-                { name: "Invisibility, Mass", duration: "1 min/level", description: "" },
-                { name: "Phase Door", duration: "one usage per two levels", description: "" },
-                { name: "Greater Arcane Sight", duration: "1 min/level", description: "" }
+                { name: "Spell Turning", duration: "10 min/level or until expended" },
+                { name: "Ethereal Jaunt", duration: "1 round/level" },
+                { name: "Regenerate", duration: "instantaneous" },
+                { name: "Invisibility, Mass", duration: "1 min/level" },
+                { name: "Phase Door", duration: "one usage per two levels" },
+                { name: "Greater Arcane Sight", duration: "1 min/level" }
             ],
             6: [
-                { name: "True Seeing", duration: "1 min/level", description: "" },
-                { name: "Globe of Invulnerability", duration: "1 round/level", description: "" },
-                { name: "Greater Heroism", duration: "1 min/level", description: "" },
-                { name: "Stoneskin", duration: "10 min/level or until discharged", description: "" },
-                { name: "Bear's Endurance, Mass", duration: "1 min/level", description: "" },
-                { name: "Bull's Strength, Mass", duration: "1 min/level", description: "" },
-                { name: "Cat's Grace, Mass", duration: "1 min/level", description: "" },
-                { name: "Eagle's Splendor, Mass", duration: "1 min/level", description: "" },
-                { name: "Fox's Cunning, Mass", duration: "1 min/level", description: "" },
-                { name: "Owl's Wisdom, Mass", duration: "1 min/level", description: "" },
-                { name: "Antimagic Field", duration: "10 min/level", description: "" },
-                { name: "Mislead", duration: "1 round/level and concentration + 3 rounds", description: "" }
+                { name: "True Seeing", duration: "1 min/level" },
+                { name: "Globe of Invulnerability", duration: "1 round/level" },
+                { name: "Greater Heroism", duration: "1 min/level" },
+                { name: "Stoneskin", duration: "10 min/level or until discharged" },
+                { name: "Bear's Endurance, Mass", duration: "1 min/level" },
+                { name: "Bull's Strength, Mass", duration: "1 min/level" },
+                { name: "Cat's Grace, Mass", duration: "1 min/level" },
+                { name: "Eagle's Splendor, Mass", duration: "1 min/level" },
+                { name: "Fox's Cunning, Mass", duration: "1 min/level" },
+                { name: "Owl's Wisdom, Mass", duration: "1 min/level" },
+                { name: "Antimagic Field", duration: "10 min/level" },
+                { name: "Mislead", duration: "1 round/level and concentration + 3 rounds" }
             ],
             5: [
-                { name: "Spell Resistance", duration: "1 min/level", description: "" },
-                { name: "Overland Flight", duration: "1 hour/level", description: "" },
-                { name: "Telepathic Bond", duration: "10 min/level", description: "" },
-                { name: "Break Enchantment", duration: "instantaneous", description: "" },
-                { name: "Righteous Might", duration: "1 round/level", description: "" },
-                { name: "Animal Growth", duration: "1 min/level", description: "" },
-                { name: "Permanency", duration: "permanent", description: "" }
+                { name: "Spell Resistance", duration: "1 min/level" },
+                { name: "Overland Flight", duration: "1 hour/level" },
+                { name: "Telepathic Bond", duration: "10 min/level" },
+                { name: "Break Enchantment", duration: "instantaneous" },
+                { name: "Righteous Might", duration: "1 round/level" },
+                { name: "Animal Growth", duration: "1 min/level" },
+                { name: "Permanency", duration: "permanent" }
             ],
             4: [
-                { name: "Greater Invisibility", duration: "1 round/level", description: "" },
-                { name: "Stoneskin", duration: "10 min/level or until discharged", description: "" },
-                { name: "Freedom of Movement", duration: "10 min/level", description: "" },
-                { name: "Death Ward", duration: "1 min/level", description: "" },
-                { name: "Spell Immunity", duration: "10 min/level", description: "" },
-                { name: "Divine Power", duration: "1 round/level", description: "" },
-                { name: "Fire Shield", duration: "1 round/level", description: "" },
-                { name: "Lesser Globe of Invulnerability", duration: "1 round/level", description: "" },
-                { name: "Mass Enlarge Person", duration: "1 min/level", description: "" }
+                { name: "Greater Invisibility", duration: "1 round/level" },
+                { name: "Stoneskin", duration: "10 min/level or until discharged" },
+                { name: "Freedom of Movement", duration: "10 min/level" },
+                { name: "Death Ward", duration: "1 min/level" },
+                { name: "Spell Immunity", duration: "10 min/level" },
+                { name: "Divine Power", duration: "1 round/level" },
+                { name: "Fire Shield", duration: "1 round/level" },
+                { name: "Lesser Globe of Invulnerability", duration: "1 round/level" },
+                { name: "Mass Enlarge Person", duration: "1 min/level" }
             ],
             3: [
-                { name: "Haste", duration: "1 round/level", description: "" },
-                { name: "Fly", duration: "1 min/level", description: "" },
-                { name: "Greater Magic Weapon", duration: "1 hour/level", description: "" },
-                { name: "Magic Circle against Evil", duration: "10 min/level", description: "" },
-                { name: "Magic Circle against Good", duration: "10 min/level", description: "" },
-                { name: "Magic Circle against Law", duration: "10 min/level", description: "" },
-                { name: "Magic Circle against Chaos", duration: "10 min/level", description: "" },
-                { name: "Heroism", duration: "10 min/level", description: "" },
-                { name: "Displacement", duration: "1 round/level", description: "" },
-                { name: "Protection from Energy", duration: "10 min/level or until discharged", description: "" },
-                { name: "Water Breathing", duration: "2 hours/level", description: "" },
-                { name: "Keen Edge", duration: "10 min/level", description: "" },
-                { name: "Magic Vestment", duration: "1 hour/level", description: "" },
-                { name: "Sculpt Sound", duration: "1 hour/level", description: "" }
+                { name: "Haste", duration: "1 round/level" },
+                { name: "Fly", duration: "1 min/level" },
+                { name: "Greater Magic Weapon", duration: "1 hour/level" },
+                { name: "Magic Circle against Evil", duration: "10 min/level" },
+                { name: "Magic Circle against Good", duration: "10 min/level" },
+                { name: "Magic Circle against Law", duration: "10 min/level" },
+                { name: "Magic Circle against Chaos", duration: "10 min/level" },
+                { name: "Heroism", duration: "10 min/level" },
+                { name: "Displacement", duration: "1 round/level" },
+                { name: "Protection from Energy", duration: "10 min/level or until discharged" },
+                { name: "Water Breathing", duration: "2 hours/level" },
+                { name: "Keen Edge", duration: "10 min/level" },
+                { name: "Magic Vestment", duration: "1 hour/level" },
+                { name: "Sculpt Sound", duration: "1 hour/level" }
             ],
             2: [
-                { name: "Bear's Endurance", duration: "1 min/level", description: "" },
-                { name: "Bull's Strength", duration: "1 min/level", description: "" },
-                { name: "Cat's Grace", duration: "1 min/level", description: "" },
-                { name: "Eagle's Splendor", duration: "1 min/level", description: "" },
-                { name: "Fox's Cunning", duration: "1 min/level", description: "" },
-                { name: "Owl's Wisdom", duration: "1 min/level", description: "" },
-                { name: "Barkskin", duration: "10 min/level", description: "" },
-                { name: "Blur", duration: "1 min/level", description: "" },
-                { name: "Mirror Image", duration: "1 min/level", description: "" },
-                { name: "See Invisibility", duration: "10 min/level", description: "" },
-                { name: "Spider Climb", duration: "10 min/level", description: "" },
-                { name: "Resist Energy", duration: "10 min/level", description: "" },
-                { name: "Aid", duration: "1 min/level", description: "" },
-                { name: "Invisibility", duration: "1 min/level", description: "" },
-                { name: "Darkvision", duration: "1 hour/level", description: "" },
-                { name: "Alter Self", duration: "10 min/level", description: "" }
+                { name: "Bear's Endurance", duration: "1 min/level" },
+                { name: "Bull's Strength", duration: "1 min/level" },
+                { name: "Cat's Grace", duration: "1 min/level" },
+                { name: "Eagle's Splendor", duration: "1 min/level" },
+                { name: "Fox's Cunning", duration: "1 min/level" },
+                { name: "Owl's Wisdom", duration: "1 min/level" },
+                { name: "Barkskin", duration: "10 min/level" },
+                { name: "Blur", duration: "1 min/level" },
+                { name: "Mirror Image", duration: "1 min/level" },
+                { name: "See Invisibility", duration: "10 min/level" },
+                { name: "Spider Climb", duration: "10 min/level" },
+                { name: "Resist Energy", duration: "10 min/level" },
+                { name: "Aid", duration: "1 min/level" },
+                { name: "Invisibility", duration: "1 min/level" },
+                { name: "Darkvision", duration: "1 hour/level" },
+                { name: "Alter Self", duration: "10 min/level" }
             ],
             1: [
-                { name: "Mage Armor", duration: "1 hour/level", description: "" },
-                { name: "Shield", duration: "1 min/level", description: "" },
-                { name: "Protection from Evil", duration: "1 min/level", description: "" },
-                { name: "Protection from Good", duration: "1 min/level", description: "" },
-                { name: "Protection from Law", duration: "1 min/level", description: "" },
-                { name: "Protection from Chaos", duration: "1 min/level", description: "" },
-                { name: "Bless", duration: "1 min/level", description: "" },
-                { name: "Divine Favor", duration: "1 minute", description: "" },
-                { name: "Enlarge Person", duration: "1 min/level", description: "" },
-                { name: "Reduce Person", duration: "1 min/level", description: "" },
-                { name: "Expeditious Retreat", duration: "1 min/level", description: "" },
-                { name: "Sanctuary", duration: "1 round/level", description: "" },
-                { name: "Shield of Faith", duration: "1 min/level", description: "" },
-                { name: "True Strike", duration: "see text", description: "" },
-                { name: "Endure Elements", duration: "24 hours", description: "" },
-                { name: "Jump", duration: "1 min/level", description: "" }
+                { name: "Mage Armor", duration: "1 hour/level" },
+                { name: "Shield", duration: "1 min/level" },
+                { name: "Protection from Evil", duration: "1 min/level" },
+                { name: "Protection from Good", duration: "1 min/level" },
+                { name: "Protection from Law", duration: "1 min/level" },
+                { name: "Protection from Chaos", duration: "1 min/level" },
+                { name: "Bless", duration: "1 min/level" },
+                { name: "Divine Favor", duration: "1 minute" },
+                { name: "Enlarge Person", duration: "1 min/level" },
+                { name: "Reduce Person", duration: "1 min/level" },
+                { name: "Expeditious Retreat", duration: "1 min/level" },
+                { name: "Sanctuary", duration: "1 round/level" },
+                { name: "Shield of Faith", duration: "1 min/level" },
+                { name: "True Strike", duration: "see text" },
+                { name: "Endure Elements", duration: "24 hours" },
+                { name: "Jump", duration: "1 min/level" }
             ],
             0: [
-                { name: "Resistance", duration: "1 minute", description: "" },
-                { name: "Virtue", duration: "1 minute", description: "" },
-                { name: "Guidance", duration: "1 minute or until discharged", description: "" }
+                { name: "Resistance", duration: "1 minute" },
+                { name: "Virtue", duration: "1 minute" },
+                { name: "Guidance", duration: "1 minute or until discharged" }
             ]
         };
+        
+        // Load spell descriptions from Firebase
+        spellDescriptionsRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                spellDescriptions = data;
+            }
+        });
         
         // Load characters from Firebase
         charactersRef.on('value', (snapshot) => {
@@ -886,6 +976,42 @@
             }
             renderInitiativeList();
         });
+        
+        // Tooltip Creator Functions
+        function showTooltipCreator(spellName, level) {
+            currentTooltipSpell = { name: spellName, level: level };
+            document.getElementById('tooltipModalTitle').textContent = 
+                spellDescriptions[spellName] ? 'Edit Tooltip' : 'Create Tooltip';
+            document.getElementById('tooltipSpellName').textContent = spellName;
+            document.getElementById('tooltipDescription').value = spellDescriptions[spellName] || '';
+            document.getElementById('tooltipCharCount').textContent = 
+                (spellDescriptions[spellName] || '').length;
+            document.getElementById('tooltipCreatorModal').style.display = 'block';
+        }
+        
+        function closeTooltipCreatorModal() {
+            document.getElementById('tooltipCreatorModal').style.display = 'none';
+            document.getElementById('tooltipDescription').value = '';
+            currentTooltipSpell = null;
+        }
+        
+        function saveTooltip() {
+            if (!currentTooltipSpell) return;
+            
+            const description = document.getElementById('tooltipDescription').value.trim();
+            
+            if (description) {
+                spellDescriptions[currentTooltipSpell.name] = description;
+            } else {
+                delete spellDescriptions[currentTooltipSpell.name];
+            }
+            
+            spellDescriptionsRef.set(spellDescriptions);
+            closeTooltipCreatorModal();
+            
+            // Refresh all spell rows to update tooltips
+            refreshAllSpellDropdowns();
+        }
         
         // Initiative Functions
         function showAddCombatantModal() {
@@ -1115,6 +1241,11 @@
             });
         }
         
+        // Get description for a spell (from custom descriptions or database)
+        function getSpellDescription(spellName) {
+            return spellDescriptions[spellName] || '';
+        }
+        
         // Add a new spell row with tooltip support
         function addSpellRow(level = null, buffData = null) {
             if (level === null) {
@@ -1137,7 +1268,7 @@
                         <select onchange="updateDuration('${rowId}')" id="spell-select-${rowId}" style="flex: 1;">
                             <option value="">Select Spell...</option>
                             ${availableSpells.map(spell => 
-                                `<option value="${spell.name}" data-duration="${spell.duration}" data-description="${(spell.description || '').replace(/"/g, '&quot;')}">${spell.name}</option>`
+                                `<option value="${spell.name}" data-duration="${spell.duration}">${spell.name}</option>`
                             ).join('')}
                         </select>
                         <div class="spell-tooltip" id="tooltip-${rowId}" style="display: none;">
@@ -1147,6 +1278,7 @@
                                 <div class="spell-desc"></div>
                             </span>
                         </div>
+                        <button class="create-tooltip-btn" id="create-tooltip-${rowId}" style="display: none;" onclick="openTooltipCreator('${rowId}')">✏️</button>
                     </div>
                 </td>
                 <td>
@@ -1222,6 +1354,17 @@
             }
         }
         
+        // Open tooltip creator from spell row
+        function openTooltipCreator(rowId) {
+            const spellSelect = document.getElementById(`spell-select-${rowId}`);
+            if (!spellSelect || !spellSelect.value) return;
+            
+            const buff = activeBuffs.find(b => b.id === rowId);
+            if (buff) {
+                showTooltipCreator(spellSelect.value, buff.level);
+            }
+        }
+        
         // Update duration display and tooltip
         function updateDuration(rowId) {
             const spellSelect = document.getElementById(`spell-select-${rowId}`);
@@ -1264,18 +1407,27 @@
             const spellSelect = document.getElementById(`spell-select-${rowId}`);
             const tooltip = document.getElementById(`tooltip-${rowId}`);
             const tooltiptext = document.getElementById(`tooltiptext-${rowId}`);
+            const createBtn = document.getElementById(`create-tooltip-${rowId}`);
             
-            if (!spellSelect || !tooltip || !tooltiptext) return;
+            if (!spellSelect || !tooltip || !tooltiptext || !createBtn) return;
             
-            const selectedOption = spellSelect.options[spellSelect.selectedIndex];
-            const description = selectedOption.dataset.description;
-            const spellName = selectedOption.value;
+            const spellName = spellSelect.value;
+            const description = getSpellDescription(spellName);
             
-            if (spellName && description) {
-                tooltip.style.display = 'block';
-                tooltiptext.querySelector('.spell-name').textContent = spellName;
-                tooltiptext.querySelector('.spell-desc').textContent = description;
+            if (spellName) {
+                createBtn.style.display = 'block';
+                createBtn.textContent = description ? '✏️' : '➕';
+                createBtn.className = description ? 'edit-tooltip-btn' : 'create-tooltip-btn';
+                
+                if (description) {
+                    tooltip.style.display = 'block';
+                    tooltiptext.querySelector('.spell-name').textContent = spellName;
+                    tooltiptext.querySelector('.spell-desc').textContent = description;
+                } else {
+                    tooltip.style.display = 'none';
+                }
             } else {
+                createBtn.style.display = 'none';
                 tooltip.style.display = 'none';
             }
         }
@@ -1285,6 +1437,7 @@
             if (durationFormula.includes('24 hours')) return 14400;
             if (durationFormula.includes('instantaneous')) return 0;
             if (durationFormula.includes('see text')) return 0;
+            if (durationFormula.includes('permanent')) return 0;
             if (durationFormula.includes('1d4+1 rounds')) return 3 * 1;
             
             const match = durationFormula.match(/(\d+)\s*(round|min|minute|hour)s?(?:\/level)?/i);
@@ -1463,14 +1616,15 @@
             document.getElementById('customSpellLevel').value = '';
             document.getElementById('customSpellDuration').value = '';
             document.getElementById('customSpellDescription').value = '';
+            document.getElementById('customDescCharCount').textContent = '0';
         }
         
         // Add custom spell with optional description
         function addCustomSpell() {
-            const name = document.getElementById('customSpellName').value;
+            const name = document.getElementById('customSpellName').value.trim();
             const level = document.getElementById('customSpellLevel').value;
-            const duration = document.getElementById('customSpellDuration').value;
-            const description = document.getElementById('customSpellDescription').value;
+            const duration = document.getElementById('customSpellDuration').value.trim();
+            const description = document.getElementById('customSpellDescription').value.trim();
             
             if (!name || !level || !duration) {
                 alert('Please fill in spell name, level, and duration');
@@ -1481,7 +1635,14 @@
                 customSpells[level] = [];
             }
             
-            customSpells[level].push({ name, duration, description: description || '' });
+            customSpells[level].push({ name, duration });
+            
+            // Save description separately if provided
+            if (description) {
+                spellDescriptions[name] = description;
+                spellDescriptionsRef.set(spellDescriptions);
+            }
+            
             closeCustomSpellModal();
             saveToFirebase();
             refreshAllSpellDropdowns();
@@ -1526,24 +1687,26 @@
             let html = '<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">';
             
             defaultSpells.forEach((spell, index) => {
+                const hasTooltip = spellDescriptions[spell.name] ? ' 📝' : '';
                 html += `
                     <div style="padding: 10px; background: #FAEBD7; border-radius: 5px; cursor: pointer; transition: all 0.3s;"
                          onmouseover="this.style.background='#FFE4B5'" 
                          onmouseout="this.style.background='#FAEBD7'"
                          onclick="removeSpellFromDatabase(${level}, ${index}, false)">
-                        <strong>${spell.name}</strong><br>
+                        <strong>${spell.name}${hasTooltip}</strong><br>
                         <span style="font-size: 0.9em; color: #8B7355;">${spell.duration}</span>
                     </div>
                 `;
             });
             
             customSpellList.forEach((spell, index) => {
+                const hasTooltip = spellDescriptions[spell.name] ? ' 📝' : '';
                 html += `
                     <div style="padding: 10px; background: #F0E68C; border-radius: 5px; cursor: pointer; transition: all 0.3s;"
                          onmouseover="this.style.background='#FFE4B5'" 
                          onmouseout="this.style.background='#F0E68C'"
                          onclick="removeSpellFromDatabase(${level}, ${index}, true)">
-                        <strong>✨ ${spell.name}</strong><br>
+                        <strong>✨ ${spell.name}${hasTooltip}</strong><br>
                         <span style="font-size: 0.9em; color: #8B7355;">${spell.duration}</span>
                     </div>
                 `;
@@ -1590,13 +1753,15 @@
                     select.innerHTML = `
                         <option value="">Select Spell...</option>
                         ${availableSpells.map(spell => 
-                            `<option value="${spell.name}" data-duration="${spell.duration}" data-description="${(spell.description || '').replace(/"/g, '&quot;')}">${spell.name}</option>`
+                            `<option value="${spell.name}" data-duration="${spell.duration}">${spell.name}</option>`
                         ).join('')}
                     `;
                     
                     if (currentValue && availableSpells.find(s => s.name === currentValue)) {
                         select.value = currentValue;
                     }
+                    
+                    updateSpellTooltip(buff.id);
                 }
             });
         }
@@ -1657,4 +1822,3 @@
     </script>
 </body>
 </html>
-
