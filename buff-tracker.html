@@ -139,6 +139,28 @@
             box-shadow: 0 4px 12px rgba(139, 69, 19, 0.4);
             transform: scale(1.05);
         }
+
+.initiative-item.active {
+    background: #FFE4B5;
+    border-color: #8B4513;
+    box-shadow: 0 4px 12px rgba(139, 69, 19, 0.4);
+    transform: scale(1.05);
+}
+
+.initiative-item.enemy {
+    background: #FFE4E1;
+    border-color: #CD5C5C;
+}
+
+.initiative-item.enemy.active {
+    background: #FFB6C1;
+    border-color: #B22222;
+}
+
+.combatant-name {
+    font-size: 1.1em;
+    font-weight: 700;
+    color: #5D4037;
         
         .combatant-name {
             font-size: 1.1em;
@@ -499,7 +521,7 @@
             <div class="initiative-header">
                 <h2>⚔️ Initiative Tracker</h2>
                 <div class="initiative-controls">
-                    <button class="btn-secondary" onclick="showAddCombatantModal()">➕ Add Enemy</button>
+                    <button class="btn-secondary" onclick="showAddCombatantModal()">➕ Add Combatant</button>
                     <button class="btn-primary" onclick="nextTurn()">▶️ Next Turn</button>
                     <button class="btn-danger btn-small" onclick="resetInitiative()">Reset Combat</button>
                 </div>
@@ -530,17 +552,26 @@
     </div>
     
     <!-- Add Combatant Modal -->
-    <div id="addCombatantModal" class="modal">
-        <div class="modal-content">
-            <h2>Add Combatant</h2>
-            <input type="text" id="combatantName" placeholder="Enemy Name">
-            <input type="number" id="combatantInitiative" placeholder="Initiative" min="1" max="50">
-            <div class="modal-buttons">
-                <button class="btn-secondary" onclick="addCombatant()">Add</button>
-                <button class="btn-danger" onclick="closeAddCombatantModal()">Cancel</button>
-            </div>
+<div id="addCombatantModal" class="modal">
+    <div class="modal-content">
+        <h2>Add Combatant</h2>
+        <input type="text" id="combatantName" placeholder="Combatant Name">
+        <input type="number" id="combatantInitiative" placeholder="Initiative" min="1" max="50">
+        
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; margin-bottom: 8px; color: #5D4037; font-weight: 600;">Type:</label>
+            <select id="combatantType" style="width: 100%; padding: 10px; border: 1px solid #8B7355; border-radius: 4px; background: #FFFAF0;">
+                <option value="ally">Ally</option>
+                <option value="enemy" selected>Enemy</option>
+            </select>
+        </div>
+        
+        <div class="modal-buttons">
+            <button class="btn-secondary" onclick="addCombatant()">Add</button>
+            <button class="btn-danger" onclick="closeAddCombatantModal()">Cancel</button>
         </div>
     </div>
+</div>
     
     <!-- Custom Spell Modal -->
     <div id="customSpellModal" class="modal">
@@ -821,25 +852,27 @@
         }
         
         function addCombatant() {
-            const name = document.getElementById('combatantName').value.trim();
-            const initiative = parseInt(document.getElementById('combatantInitiative').value);
-            
-            if (!name || isNaN(initiative)) {
-                alert('Please fill in all fields');
-                return;
-            }
-            
-            combatants.push({
-                id: `combatant-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                name,
-                initiative,
-                isMainCharacter: false
-            });
-            
-            combatants.sort((a, b) => b.initiative - a.initiative);
-            saveInitiativeToFirebase();
-            closeAddCombatantModal();
-        }
+    const name = document.getElementById('combatantName').value.trim();
+    const initiative = parseInt(document.getElementById('combatantInitiative').value);
+    const type = document.getElementById('combatantType').value;
+    
+    if (!name || isNaN(initiative)) {
+        alert('Please fill in all fields');
+        return;
+    }
+    
+    combatants.push({
+        id: `combatant-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        name,
+        initiative,
+        isMainCharacter: false,
+        isEnemy: type === 'enemy'
+    });
+    
+    combatants.sort((a, b) => b.initiative - a.initiative);
+    saveInitiativeToFirebase();
+    closeAddCombatantModal();
+}
         
         function renderInitiativeList() {
             const list = document.getElementById('initiativeList');
@@ -854,7 +887,8 @@
             
             combatants.forEach((combatant, index) => {
                 const item = document.createElement('div');
-                item.className = `initiative-item ${index === currentTurnIndex ? 'active' : ''}`;
+                const enemyClass = combatant.isEnemy ? 'enemy' : '';
+item.className = `initiative-item ${enemyClass} ${index === currentTurnIndex ? 'active' : ''}`;
                 
                 const nameDiv = document.createElement('div');
                 nameDiv.className = 'combatant-name';
@@ -1585,6 +1619,7 @@ window.onload = function() {
     </script>
 </body>
 </html>
+
 
 
 
