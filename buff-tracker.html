@@ -508,8 +508,8 @@
         <div class="initiative-section">
             <div class="initiative-header">
     <div class="initiative-controls">
-        <button class="btn-secondary" onclick="showAddCombatantModal()">➕ Add Combatant</button>
         <button class="btn-primary" onclick="nextTurn()">▶️ Next Turn</button>
+        <button class="btn-secondary" onclick="showAddCombatantModal()">➕ Add Combatant</button>
     </div>
     <button class="btn-danger btn-small" onclick="resetInitiative()">Reset Combat</button>
 </div>
@@ -531,7 +531,7 @@
             <button class="btn-secondary" onclick="showManageSpellsModal()">📋 Manage Spell Lists</button>
             <button class="btn-secondary" onclick="showManageCharactersModal()">👥 Manage Characters</button>
         </div>
-        <button class="btn-danger" onclick="clearAll()">🗑️ Clear All Buffs</button>
+        <button class="btn-danger btn-small" onclick="clearAll()">🗑️ Clear All Buffs</button>
     </div>
 </div>
         
@@ -1608,6 +1608,7 @@ window.onload = function() {
     </script>
 </body>
 </html>
+
 
 
 
