@@ -1350,8 +1350,10 @@
         }
     });
     
-    // Ensure tooltips are displayed after all DOM elements are ready
-    setTimeout(() => updateSpellTooltip(rowId), 100);
+    // Force tooltip update after everything is loaded
+    setTimeout(() => {
+        updateSpellTooltip(rowId);
+    }, 250);
 } else {
     saveToFirebase();
 }
@@ -1825,4 +1827,5 @@
     </script>
 </body>
 </html>
+
 
