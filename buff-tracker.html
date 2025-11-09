@@ -587,6 +587,58 @@
         .edit-tooltip-btn:hover {
             background: #CD853F;
         }
+
+.character-notes-icon {
+    display: inline-block;
+    cursor: pointer;
+    color: #8B4513;
+    font-size: 0.9em;
+    margin-left: 5px;
+}
+
+.character-notes-tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.character-notes-tooltip .tooltiptext {
+    visibility: hidden;
+    width: 300px;
+    background-color: #5D4037;
+    color: #FFF8DC;
+    text-align: left;
+    border-radius: 8px;
+    padding: 10px;
+    position: absolute;
+    z-index: 1000;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -150px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 12px;
+    line-height: 1.4;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    border: 2px solid #8B4513;
+    white-space: pre-wrap;
+}
+
+.character-notes-tooltip .tooltiptext::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #8B4513 transparent transparent transparent;
+}
+
+.character-notes-tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+}
+        
     </style>
 </head>
 <body>
@@ -731,6 +783,22 @@
             </div>
         </div>
     </div>
+
+<!-- Character Notes Modal -->
+<div id="characterNotesModal" class="modal">
+    <div class="modal-content">
+        <h2 id="notesModalTitle">Character Notes</h2>
+        <p style="color: #5D4037; margin-bottom: 15px;">
+            <strong>Character:</strong> <span id="notesCharacterName"></span>
+        </p>
+        <textarea id="characterNotesText" placeholder="Enter notes for this character (max 500 characters)" maxlength="500"></textarea>
+        <div class="char-counter"><span id="notesCharCount">0</span>/500</div>
+        <div class="modal-buttons">
+            <button class="btn-secondary" onclick="saveCharacterNotes()">Save</button>
+            <button class="btn-danger" onclick="closeCharacterNotesModal()">Cancel</button>
+        </div>
+    </div>
+</div>
     
     <!-- Manage Characters Modal -->
     <div id="manageCharactersModal" class="modal">
@@ -764,6 +832,7 @@
         let currentRound = 1;
         let currentSpellLevel = null;
         let currentTooltipSpell = null; // Track which spell we're editing tooltip for
+        let characterNotes = {}; // Store notes by character name
         
         // Firebase Configuration
         const firebaseConfig = {
@@ -784,6 +853,7 @@
         const spellDescriptionsRef = database.ref('spellDescriptions');
         const charactersRef = database.ref('characters');
         const initiativeRef = database.ref('initiative');
+        const characterNotesRef = database.ref('characterNotes');
         
         // Connection status
         const connectedRef = database.ref('.info/connected');
@@ -815,6 +885,14 @@
                     tooltipCount.textContent = this.value.length;
                 });
             }
+
+            const notesText = document.getElementById('characterNotesText');
+    const notesCount = document.getElementById('notesCharCount');
+    if (notesText && notesCount) {
+        notesText.addEventListener('input', function() {
+            notesCount.textContent = this.value.length;
+        });
+    }            
         });
         
         // Spell database
@@ -1019,6 +1097,14 @@
             }
             renderInitiativeList();
         });
+
+// Load character notes from Firebase
+characterNotesRef.on('value', (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+        characterNotes = data;
+    }
+});
         
         // Tooltip Creator Functions
         function showTooltipCreator(spellName, level) {
@@ -1107,8 +1193,31 @@
                 item.className = `initiative-item ${enemyClass} ${index === currentTurnIndex ? 'active' : ''}`;
                 
                 const nameDiv = document.createElement('div');
-                nameDiv.className = 'combatant-name';
-                nameDiv.textContent = combatant.name;
+nameDiv.className = 'combatant-name';
+nameDiv.style.display = 'flex';
+nameDiv.style.alignItems = 'center';
+nameDiv.style.justifyContent = 'center';
+
+const nameSpan = document.createElement('span');
+nameSpan.textContent = combatant.name;
+
+nameDiv.appendChild(nameSpan);
+
+// Add notes icon
+const notesContainer = document.createElement('span');
+const hasNotes = characterNotes[combatant.name];
+
+if (hasNotes) {
+    notesContainer.className = 'character-notes-tooltip';
+    notesContainer.innerHTML = `
+        <span class="character-notes-icon" onclick="showCharacterNotesModal('${combatant.name}')">📝</span>
+        <span class="tooltiptext">${hasNotes}</span>
+    `;
+} else {
+    notesContainer.innerHTML = `<span class="character-notes-icon" onclick="showCharacterNotesModal('${combatant.name}')">➕</span>`;
+}
+
+nameDiv.appendChild(notesContainer);
                 
                 const controlsDiv = document.createElement('div');
                 controlsDiv.className = 'initiative-controls-box';
@@ -1211,6 +1320,42 @@
                 currentRound
             });
         }
+
+        // Character Notes Functions
+let currentNotesCharacter = null;
+
+function showCharacterNotesModal(characterName) {
+    currentNotesCharacter = characterName;
+    document.getElementById('notesModalTitle').textContent = 'Character Notes';
+    document.getElementById('notesCharacterName').textContent = characterName;
+    document.getElementById('characterNotesText').value = characterNotes[characterName] || '';
+    document.getElementById('notesCharCount').textContent = (characterNotes[characterName] || '').length;
+    document.getElementById('characterNotesModal').style.display = 'block';
+}
+
+function closeCharacterNotesModal() {
+    document.getElementById('characterNotesModal').style.display = 'none';
+    document.getElementById('characterNotesText').value = '';
+    currentNotesCharacter = null;
+}
+
+function saveCharacterNotes() {
+    if (!currentNotesCharacter) return;
+    
+    const notes = document.getElementById('characterNotesText').value.trim();
+    
+    if (notes) {
+        characterNotes[currentNotesCharacter] = notes;
+    } else {
+        delete characterNotes[currentNotesCharacter];
+    }
+    
+    characterNotesRef.set(characterNotes);
+    closeCharacterNotesModal();
+    
+    // Refresh initiative list to update tooltips
+    renderInitiativeList();
+}
         
         // Initialize the table
         function initializeTable() {
@@ -1870,6 +2015,7 @@
     </script>
 </body>
 </html>
+
 
 
 
