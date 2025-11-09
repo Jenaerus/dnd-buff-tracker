@@ -1103,6 +1103,8 @@ characterNotesRef.on('value', (snapshot) => {
     const data = snapshot.val();
     if (data) {
         characterNotes = data;
+        // Refresh initiative list to show updated notes
+        renderInitiativeList();
     }
 });
         
@@ -2030,6 +2032,7 @@ function saveCharacterNotes() {
     </script>
 </body>
 </html>
+
 
 
 
