@@ -825,13 +825,17 @@
                 { name: "Time Stop", duration: "1d4+1 rounds" },
                 { name: "Freedom", duration: "instantaneous" },
                 { name: "Prismatic Sphere", duration: "10 min/level" },
+                { name: "Shapechange", duration: "10 min/level"},
                 { name: "Etherealness", duration: "1 min/level" }
             ],
             8: [
                 { name: "Mind Blank", duration: "24 hours" },
                 { name: "Holy Aura", duration: "1 round/level" },
+                { name: "Antipathy", duration: "2 hours/level" },
                 { name: "Protection from Spells", duration: "10 min/level" },
+                { name: "Iron Body", duration: "1 min/level" },
                 { name: "Moment of Prescience", duration: "1 hour/level or until discharged" },
+                { name: "Prying Eyes, Greater", duration: "1 hour/level" },
                 { name: "Iron Body", duration: "1 min/level" },
                 { name: "Greater Spell Immunity", duration: "10 min/level" }
             ],
@@ -841,12 +845,15 @@
                 { name: "Regenerate", duration: "instantaneous" },
                 { name: "Invisibility, Mass", duration: "1 min/level" },
                 { name: "Phase Door", duration: "one usage per two levels" },
-                { name: "Greater Arcane Sight", duration: "1 min/level" }
+                { name: "Project Image", duration: "1 round/level" },
+                { name: "Statue", duration: "1 round/level" },
+                { name: "Greater Arcane Sight", duration: "1 hour/level" }
             ],
             6: [
                 { name: "True Seeing", duration: "1 min/level" },
                 { name: "Globe of Invulnerability", duration: "1 round/level" },
                 { name: "Greater Heroism", duration: "1 min/level" },
+                { name: "Project Image", duration: "1 round/level" },
                 { name: "Stoneskin", duration: "10 min/level or until discharged" },
                 { name: "Bear's Endurance, Mass", duration: "1 min/level" },
                 { name: "Bull's Strength, Mass", duration: "1 min/level" },
@@ -859,15 +866,22 @@
             ],
             5: [
                 { name: "Spell Resistance", duration: "1 min/level" },
+                { name: "Mage's Private Sanctum", duration: "24 hours" },
+                { name: "Mage's Faithful Hound", duration: "1 hour/level" },
                 { name: "Overland Flight", duration: "1 hour/level" },
+                { name: "Stoneskin", duration: "10 min/level or until discharged" },
+                { name: "Prying Eyes", duration: "1 hour/level" },
                 { name: "Telepathic Bond", duration: "10 min/level" },
                 { name: "Break Enchantment", duration: "instantaneous" },
                 { name: "Righteous Might", duration: "1 round/level" },
                 { name: "Animal Growth", duration: "1 min/level" },
+                { name: "Telekinesis", duration: "1 round/level" },
                 { name: "Permanency", duration: "permanent" }
             ],
             4: [
                 { name: "Greater Invisibility", duration: "1 round/level" },
+                { name: "Arcane Eye", duration: "1 min/level" },
+                { name: "Secure Shelter", duration: "2 hours/level" },
                 { name: "Stoneskin", duration: "10 min/level or until discharged" },
                 { name: "Freedom of Movement", duration: "10 min/level" },
                 { name: "Death Ward", duration: "1 min/level" },
@@ -875,11 +889,15 @@
                 { name: "Divine Power", duration: "1 round/level" },
                 { name: "Fire Shield", duration: "1 round/level" },
                 { name: "Lesser Globe of Invulnerability", duration: "1 round/level" },
-                { name: "Mass Enlarge Person", duration: "1 min/level" }
+                { name: "Mass Enlarge Person", duration: "1 min/level" },
+                { name: "Mass Reduce Person", duration: "1 min/level" }
             ],
             3: [
                 { name: "Haste", duration: "1 round/level" },
+                { name: "Arcane Sight", duration: "1 min/level" },
+                { name: "Heroism", duration: "10 min/level" },
                 { name: "Fly", duration: "1 min/level" },
+                { name: "Blink", duration: "1 round/level" },
                 { name: "Greater Magic Weapon", duration: "1 hour/level" },
                 { name: "Magic Circle against Evil", duration: "10 min/level" },
                 { name: "Magic Circle against Good", duration: "10 min/level" },
@@ -887,10 +905,21 @@
                 { name: "Magic Circle against Chaos", duration: "10 min/level" },
                 { name: "Heroism", duration: "10 min/level" },
                 { name: "Displacement", duration: "1 round/level" },
-                { name: "Protection from Energy", duration: "10 min/level or until discharged" },
+                { name: "Prot. Energy (Fire)", duration: "10 min/level or until discharged" },
+                { name: "Prot. Energy (Acid)", duration: "10 min/level or until discharged" },
+                { name: "Prot. Energy (Cold)", duration: "10 min/level or until discharged" },
+                { name: "Prot. Energy (Electricity)", duration: "10 min/level or until discharged" },
+                { name: "Prot. Energy (Sonic)", duration: "10 min/level or until discharged" },
+                { name: "Prot. Energy (All)", duration: "10 min/level or until discharged" },
                 { name: "Water Breathing", duration: "2 hours/level" },
                 { name: "Keen Edge", duration: "10 min/level" },
                 { name: "Magic Vestment", duration: "1 hour/level" },
+                { name: "Tiny Hut", duration: "2 hours/level" },
+                { name: "Gaseous Form", duration: "2 min/level" },
+                { name: "Phantom Steed", duration: "1 hour/level" },
+                { name: "Tongues", duration: "10 min/level" },
+                { name: "Stoneskin", duration: "10 min/level or until discharged" },
+                { name: "Rage", duration: "1 round/level" },
                 { name: "Sculpt Sound", duration: "1 hour/level" }
             ],
             2: [
@@ -902,10 +931,19 @@
                 { name: "Owl's Wisdom", duration: "1 min/level" },
                 { name: "Barkskin", duration: "10 min/level" },
                 { name: "Blur", duration: "1 min/level" },
+                { name: "Levitate", duration: "1 min/level" },
                 { name: "Mirror Image", duration: "1 min/level" },
+                { name: "False Life", duration: "1 hour/level" },
+                { name: "Spectral Hand", duration: "1 min/level" },
                 { name: "See Invisibility", duration: "10 min/level" },
                 { name: "Spider Climb", duration: "10 min/level" },
-                { name: "Resist Energy", duration: "10 min/level" },
+                { name: "Resist Energy (Fire)", duration: "10 min/level" },
+                { name: "Resist Energy (Acid)", duration: "10 min/level" },
+                { name: "Resist Energy (Cold)", duration: "10 min/level" },
+                { name: "Resist Energy (Electricity)", duration: "10 min/level" },
+                { name: "Resist Energy (Sonic)", duration: "10 min/level" },
+                { name: "Resist Energy (All)", duration: "10 min/level" },
+                { name: "Protection from Arrows", duration: "1 hour/level" },
                 { name: "Aid", duration: "1 min/level" },
                 { name: "Invisibility", duration: "1 min/level" },
                 { name: "Darkvision", duration: "1 hour/level" },
@@ -913,18 +951,23 @@
             ],
             1: [
                 { name: "Mage Armor", duration: "1 hour/level" },
+                { name: "Magic Weapon", duration: "1 min/level" },
                 { name: "Shield", duration: "1 min/level" },
                 { name: "Protection from Evil", duration: "1 min/level" },
                 { name: "Protection from Good", duration: "1 min/level" },
                 { name: "Protection from Law", duration: "1 min/level" },
                 { name: "Protection from Chaos", duration: "1 min/level" },
                 { name: "Bless", duration: "1 min/level" },
+                { name: "Alarm", duration: "2 hours/level" },
                 { name: "Divine Favor", duration: "1 minute" },
                 { name: "Enlarge Person", duration: "1 min/level" },
                 { name: "Reduce Person", duration: "1 min/level" },
+                { name: "Unseen Servant", duration: "1 min/level" },
                 { name: "Expeditious Retreat", duration: "1 min/level" },
+                { name: "Feature Fall", duration: "1 round/level" },
                 { name: "Sanctuary", duration: "1 round/level" },
                 { name: "Shield of Faith", duration: "1 min/level" },
+                { name: "Obscuring Mist", duration: "1 min/level" },
                 { name: "True Strike", duration: "see text" },
                 { name: "Endure Elements", duration: "24 hours" },
                 { name: "Jump", duration: "1 min/level" }
@@ -1827,6 +1870,7 @@
     </script>
 </body>
 </html>
+
 
 
 
